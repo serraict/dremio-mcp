@@ -1,0 +1,124 @@
+#
+# Copyright (C) 2017-2019 Dremio Corporation. This file is confidential and private property.
+#
+
+from aiohttp import ClientSession, ClientResponse, ClientResponseError
+from pathlib import Path
+from typing import AnyStr, Callable, Optional, Dict, TypeAlias, Union, TextIO
+from dremioai.log import logger
+from json import loads
+from pydantic import BaseModel, ValidationError
+
+from dremioai.config import settings
+
+DeserializationStrategy: TypeAlias = Union[Callable, BaseModel]
+
+
+class AsyncHttpClient:
+    def __init__(self, uri: AnyStr, token: AnyStr):
+        self.uri = uri
+        self.token = token
+        self.headers = {
+            "Authorization": f"Bearer {token}",
+            "content-type": "application/json",
+        }
+        self.update_headers()
+
+    def update_headers(self):
+        pass
+
+    async def download(self, response: ClientResponse, file: TextIO):
+        while chunk := await response.content.read(1024):
+            file.write(chunk)
+        file.flush()
+
+    async def deserialize(
+        self,
+        response: ClientResponse,
+        deser: DeserializationStrategy,
+        top_level_list: bool = False,
+    ):
+        js = await response.text()
+        try:
+            if deser is not None and issubclass(deser, BaseModel):
+                if top_level_list:
+                    return [deser.model_validate(o) for o in loads(js)]
+                return deser.model_validate_json(js)
+            return loads(js, object_hook=deser)
+        except ValidationError as e:
+            logger().error(
+                f"in {response.request_info.method} {response.request_info.url}: {e.errors()}\ndata = {js}"
+            )
+            raise RuntimeError(f"Unable to parse {e}, deser={deser}\n{e.errors()}")
+        except Exception as e:
+            logger().error(
+                f"in {response.request_info.method} {response.request_info.url} deser={deser}: unable to parse {js}: {e}"
+            )
+            raise
+
+    async def handle_response(
+        self,
+        response: ClientResponse,
+        deser: DeserializationStrategy,
+        file: TextIO,
+        top_level_list: bool = False,
+    ):
+        response.raise_for_status()
+        if file is None:
+            return await self.deserialize(
+                response, deser, top_level_list=top_level_list
+            )
+        await self.download(response, file)
+
+    async def get(
+        self,
+        endpoint: AnyStr,
+        params: Dict[AnyStr, AnyStr] = None,
+        deser: Optional[DeserializationStrategy] = None,
+        body: Dict[AnyStr, AnyStr] = None,
+        file: Optional[TextIO] = None,
+        top_level_list: bool = False,
+    ):
+        async with ClientSession() as session:
+            logger().info(
+                f"{self.uri}{endpoint}', headers={self.headers}, params={params}"
+            )
+            async with session.get(
+                f"{self.uri}{endpoint}",
+                headers=self.headers,
+                json=body,
+                params=params,
+                ssl=False,
+            ) as response:
+                return await self.handle_response(
+                    response, deser, file, top_level_list=top_level_list
+                )
+
+    async def post(
+        self,
+        endpoint: AnyStr,
+        body: Optional[AnyStr] = None,
+        deser: Optional[DeserializationStrategy] = None,
+        file: Optional[TextIO] = None,
+        top_level_list: bool = False,
+    ):
+        async with ClientSession() as session:
+            async with session.post(
+                f"{self.uri}{endpoint}", headers=self.headers, json=body, ssl=False
+            ) as response:
+                return await self.handle_response(
+                    response, deser, file, top_level_list=top_level_list
+                )
+
+
+class DremioAsyncHttpClient(AsyncHttpClient):
+    def __init__(self, uri: Optional[str] = None, pat: Optional[str] = None):
+        if uri is None:
+            uri = settings.instance().dremio.uri
+        if pat is None:
+            pat = settings.instance().dremio.pat
+        if pat.startswith("@"):
+            pat = Path(pat[1:]).expanduser().read_text().strip()
+        if uri is None or pat is None:
+            raise RuntimeError(f"uri={uri} pat={pat} are required")
+        super().__init__(uri, pat)
