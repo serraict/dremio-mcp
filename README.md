@@ -2,6 +2,24 @@
 
 An **M**del **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
 
+```mermaid
+architecture-beta
+    group ws(cloud)[Workstation]
+
+    service cf(database)[Config] in ws
+    service mcp(server)[Dremio MCP Server] in ws
+    service claude(cloud)[Claude Desktop] in ws
+
+    mcp:B <-- T:cf
+    claude:R <--> L:mcp
+
+
+    group dremio(cloud)[Dremio]
+    service de(server)[Dremio Engine] in dremio
+
+    mcp:R <--> L:de
+```
+
 # Installation
 
 -   The MCP server is python based and the only prerequiste is to install the package manager [uv](https://docs.astral.sh/uv/guides/install-python/)
