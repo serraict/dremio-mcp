@@ -1,6 +1,6 @@
 # Dremio MCP server
 
-An **M**del **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
+An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
 
 ```mermaid
 architecture-beta
