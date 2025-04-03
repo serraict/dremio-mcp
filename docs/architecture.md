@@ -8,7 +8,7 @@ flowchart LR
         LLM["LLMs like Claude, etc.."]
     end
     subgraph "User's Server"
-        Host["Host with MCP Client<br/>(Claude, IDEs, Agent)"]
+        Host["Host with MCP Client<br/>(Claude desktop, IDEs, Agent)"]
         S1["MCP Server A<br/>(for example..)"]
         S2["Dremio MCP Server"]
         Host <-->|"MCP Protocol"| S1
