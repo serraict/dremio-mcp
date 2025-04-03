@@ -19,7 +19,6 @@ sequenceDiagram
     end
 
     participant MCP as MCPServer
-    participant Tools
     participant DB as Dremio
 
     Note over Client,MCP: MCP server discovery and initialization
