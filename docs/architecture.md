@@ -1,5 +1,26 @@
 # Dremio MCP Server architecture
 
+## High level
+
+```mermaid
+flowchart LR
+    subgraph "LLMs"
+        LLM["LLMs like Claude, etc.."]
+    end
+    subgraph "User's Server"
+        Host["Host with MCP Client<br/>(Claude, IDEs, Agent)"]
+        S1["MCP Server A<br/>(for example..)"]
+        S2["Dremio MCP Server"]
+        Host <-->|"MCP Protocol"| S1
+        Host <-->|"MCP Protocol"| S2
+        Host <-->|"Interact with LLM. LLM calls<br/>tools from MCP server"| LLM
+        S1 <--> D1[("Local<br/>Data Source")]
+    end
+    subgraph "Remote Dremio cluster"
+        S2 <-->|"REST APIs<br/>Flight etc.."| D3[("Dremio")]
+    end
+```
+
 ## How does it work
 
 ```mermaid
