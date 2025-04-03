@@ -5,7 +5,7 @@
 ```mermaid
 ---
 config:
-  look: neo
+  look: handDrawn
   theme: neo
 ---
 
