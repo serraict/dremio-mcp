@@ -24,6 +24,15 @@ flowchart LR
 ## How does it work
 
 ```mermaid
+%%{init:
+{
+    "theme": "neo",
+    "look": "handDrawn",
+    "themeVariables": {
+        "fontFamily": "Inter"
+    }
+}
+}
 ---
 config:
   look: handDrawn
