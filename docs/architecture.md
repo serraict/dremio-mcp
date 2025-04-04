@@ -32,12 +32,7 @@ flowchart LR
         "fontFamily": "Inter"
     }
 }
-}
----
-config:
-  look: handDrawn
-  theme: neo
----
+}%%
 
 
 sequenceDiagram
