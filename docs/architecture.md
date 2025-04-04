@@ -3,6 +3,14 @@
 ## High level
 
 ```mermaid
+%%{init:
+{
+    "themeVariables": {
+        "fontFamily": "Inter"
+    }
+}
+}%%
+
 flowchart LR
     subgraph "LLMs"
         LLM["LLMs like Claude, etc.."]
@@ -26,8 +34,6 @@ flowchart LR
 ```mermaid
 %%{init:
 {
-    "theme": "neo",
-    "look": "handDrawn",
     "themeVariables": {
         "fontFamily": "Inter"
     }
