@@ -2,7 +2,7 @@
 # Copyright (C) 2017-2019 Dremio Corporation. This file is confidential and private property.
 #
 
-from pydantic import BaseModel, Field, AfterValidator, ValidationError
+from pydantic import BaseModel, Field, AfterValidator, ValidationError, ConfigDict
 from typing import (
     Annotated,
     List,
@@ -169,10 +169,16 @@ class Search(BaseModel):
     category: Optional[Category] = None
     max_results: Optional[int] = Field(default=50, alias="maxResults")
     next_page_token: Optional[str] = Field(default=None, alias="pageToken")
+    filter: Optional[str] = ""
     query: str = None
 
+    model_config: ConfigDict = ConfigDict(serialize_by_alias=True)
 
-async def get_search_results(search: Search) -> List[EnterpriseSearchResults]:
+
+async def get_search_results(search: str | Search) -> List[EnterpriseSearchResults]:
+    if isinstance(search, str):
+        search = Search(query=search)
+
     client = AsyncHttpClient(
         settings.instance().dremio.uri, settings.instance().dremio.pat
     )
@@ -180,7 +186,7 @@ async def get_search_results(search: Search) -> List[EnterpriseSearchResults]:
     result = []
     response = await client.post(
         "/api/v3/search",
-        body=search.model_dump_json(exclude_none=True, exclude_unset=True),
+        body=search.model_dump(exclude_none=True),
         deser=EnterpriseSearchResults,
     )
     while response.results and response.error is None and response.more is None:
@@ -190,7 +196,7 @@ async def get_search_results(search: Search) -> List[EnterpriseSearchResults]:
         search.next_page_token = response.next_page_token
         response = await client.post(
             "/api/v3/search",
-            body=search.model_dump_json(exclude_none=True, exclude_unset=True),
+            body=search.model_dump(exclude_none=True),
             deser=EnterpriseSearchResults,
         )
 

@@ -22,22 +22,15 @@ app = Typer(
 @app.command("run")
 def do_search(
     query: Annotated[str, Argument(...)],
-    uri: Annotated[str, Option(envvar="DREMIO_URI", show_envvar=True)] = None,
-    project_id: Annotated[
-        str, Option(envvar="DREMIO_PROJECT_ID", show_envvar=True)
-    ] = None,
-    pat: Annotated[str, Option(envvar="DREMIO_PAT", show_envvar=True)] = None,
-    config_file: Annotated[Path, Option(help="Path to config file")] = None,
+    category: Annotated[List[search.Category], Option(help="Search category")] = None,
     use_df: Annotated[
         Optional[bool], Option(help="Convert results to pandas dataframe")
     ] = False,
 ):
-
-    settings.configure(config_file)
-    settings.instance().get().with_overrides(
-        {"dremio.uri": uri, "dremio.project_id": project_id, "dremio.pat": pat}
+    if category:
+        category = ",".join([f'"{c.name}"' for c in category])
+    s = search.Search(
+        query=query, filter=f"category in [{category}]" if category else ""
     )
-    logger().info(f"settings = {settings.instance()}")
-
-    result = asyncio.run(search.get_search_results(search=search.Search(query=query)))
+    result = asyncio.run(search.get_search_results(search=s))
     pp(result)

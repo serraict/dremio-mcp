@@ -63,7 +63,7 @@ def _resolve_dremio_uri(
     elif isinstance(uri, HttpUrl):
         uri = str(uri)
 
-    return uri
+    return uri.rstrip("/")
 
 
 def _resolve_token_file(pat: str) -> str:

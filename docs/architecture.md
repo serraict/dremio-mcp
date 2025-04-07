@@ -81,3 +81,35 @@ sequenceDiagram
     LLM->>Client: Generates response
     Client->>User: Delivers response
 ```
+
+```mermaid
+%%{init:
+    {
+        "themeVariables": {
+            "fontFamily": "Inter"
+        }
+    }
+}%%
+
+sequenceDiagram
+
+    box Claude desktop / LLM / Agent
+    participant LLM as Claude LLM
+    participant Client as MCP Client / Frontend
+    end
+
+    participant MCP as MCPServer
+
+    par Client to MCP
+        Client --> MCP: List available prompts
+        activate MCP
+        MCP --> Client: Returns prompts
+        deactivate MCP
+    and Client to MCP
+        Client --> MCP: List available tools
+        activate MCP
+        MCP --> Client: Returns tools, with arguments and description
+        deactivate MCP
+    end
+
+```
