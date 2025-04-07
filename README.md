@@ -1,5 +1,7 @@
 # Dremio MCP server
 
+# Indroduction
+
 An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
 
 ```mermaid
@@ -57,7 +59,7 @@ There are two configurations necessary before the MCP server can be invoked.
 
 This file is located by default at `$HOME/.config/dremioai/config.yaml` but can be overriden using the `--config-file` option at runtime for `dremio-mcp-server`
 
-**Format**
+### Format
 
 ```yaml
 # The dremio section contains 3 main things - the URI to connect, PAT to use
@@ -78,7 +80,7 @@ tools:
 #token: ...
 ```
 
-**Modes**
+### Modes
 
 There are 3 modes
 
