@@ -2,6 +2,8 @@
 
 ## High level
 
+At a high level, MCP Server and the [MCP protocol](https://modelcontextprotocol.io/) are standardizing the interface between LLMs and tools, prompts allowing easier integration and agentic workflow development
+
 ```mermaid
 %%{init:
 {
@@ -30,6 +32,8 @@ flowchart LR
 ```
 
 ## How does it work
+
+The overall interaction for the MCP server can summarized as follows -
 
 ```mermaid
 %%{init:

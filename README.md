@@ -1,10 +1,29 @@
 # Dremio MCP server
 
+Table of Contents
+
+-   [Introduction](#indroduction)
+-   [Installation](#installation)
+-   [Initial setup](#initial-setup)
+    -   [MCP server config file](#mcp-server-config-file)
+        -   [Format](#format)
+        -   [Modes](#modes)
+    -   [The LLM (Claude) config file](#the-llm-claude-config-file)
+
 # Indroduction
 
-An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
+-   [The dremio section contains 3 main things - the URI to connect, PAT to use]
+    An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
 
 ```mermaid
+%%{init:
+{
+    "themeVariables": {
+        "fontFamily": "Inter"
+    }
+}
+}%%
+
 architecture-beta
     group ws(cloud)[Workstation]
 
@@ -117,3 +136,7 @@ And then add this section
 ```
 
 This will pickup the default location of MCP server config file. It can also be passed in the `args` section above as `"--config-file", "<custom config file>"` after `run`
+
+# Further documentation
+
+1. [Architecture](docs/architecture.md) : The details around Dremio MCP server architecture
