@@ -2,7 +2,14 @@
 # Copyright (C) 2017-2019 Dremio Corporation. This file is confidential and private property.
 #
 
-from pydantic import BaseModel, Field, AfterValidator, ValidationError, ConfigDict
+from pydantic import (
+    BaseModel,
+    Field,
+    AfterValidator,
+    ValidationError,
+    ConfigDict,
+    field_validator,
+)
 from typing import (
     Annotated,
     List,
@@ -166,16 +173,31 @@ class EnterpriseSearchResults(BaseModel):
 
 
 class Search(BaseModel):
-    category: Optional[Category] = None
     max_results: Optional[int] = Field(default=50, alias="maxResults")
     next_page_token: Optional[str] = Field(default=None, alias="pageToken")
-    filter: Optional[str] = ""
+    filter: Optional[Union[str, List[Category]]] = ""
     query: str = None
+
+    @field_validator("filter", mode="after")
+    @classmethod
+    def validate_filter(cls, v: Union[str, List[Category]]) -> str:
+        if isinstance(v, str) and v:
+            v = f'category in ["{Category[v.upper()].name}"]'
+        elif isinstance(v, list):
+            v = ",".join([f'"{c.name}"' for c in v if isinstance(c, Category)])
+            v = f"category in [{v}]"
+        else:
+            v = ""
+        return v
 
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True)
 
 
-async def get_search_results(search: str | Search) -> List[EnterpriseSearchResults]:
+class EnterpriseSearchResultsWrapper(BaseModel):
+    results: List[EnterpriseSearchResultsObject] = Field(default_factory=list)
+
+
+async def get_search_results(search: str | Search) -> EnterpriseSearchResultsWrapper:
     if isinstance(search, str):
         search = Search(query=search)
 
@@ -200,4 +222,4 @@ async def get_search_results(search: str | Search) -> List[EnterpriseSearchResul
             deser=EnterpriseSearchResults,
         )
 
-    return result
+    return EnterpriseSearchResultsWrapper(results=result)

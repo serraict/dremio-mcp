@@ -26,7 +26,7 @@ import pandas as pd
 
 from pathlib import Path
 
-from dremioai.api.dremio import sql, projects, usage, engines
+from dremioai.api.dremio import sql, projects, usage, engines, search
 from dremioai.config import settings
 from dremioai.config.tools import ToolType
 from dremioai.api.prometheus import vm
@@ -133,7 +133,7 @@ def is_tool_for(
             return False
 
     if (For := get_for(tool)) is not None:
-        return (For & tool_type) == tool_type
+        return (For & tool_type) != 0  # == tool_type
     return False
 
 
@@ -347,6 +347,28 @@ class GetTableOrViewLineage(Tools):
             A json representation with the lineage of the table or view.
         """
         return await get_lineage(table_name)
+
+
+class SemanticSearch(Tools):
+    For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS]]
+
+    async def invoke(
+        self, query: str, category: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Runs a semantic search on the Dremio cluster using the given query
+
+        Args:
+            query: The query to run
+            category: Optionally a category to search for. One of TABLE, VIEW, JOB, SOURCE, FOLDER. Search all categories if unspecified
+
+        Returns:
+            A json representation with the results of the search
+        """
+        if category:
+            category = search.Category[category.upper()]
+        sq = search.Search(query=query, filter=category)
+        res = await search.get_search_results(sq)
+        return res.model_dump_json(exclude_none=True, indent=2)
 
 
 def _subclasses(cls):

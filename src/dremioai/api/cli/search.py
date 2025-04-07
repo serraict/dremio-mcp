@@ -27,10 +27,8 @@ def do_search(
         Optional[bool], Option(help="Convert results to pandas dataframe")
     ] = False,
 ):
+    args = {"query": query}
     if category:
-        category = ",".join([f'"{c.name}"' for c in category])
-    s = search.Search(
-        query=query, filter=f"category in [{category}]" if category else ""
-    )
-    result = asyncio.run(search.get_search_results(search=s))
+        args["filter"] = category
+    result = asyncio.run(search.get_search_results(search=search.Search(**args)))
     pp(result)
