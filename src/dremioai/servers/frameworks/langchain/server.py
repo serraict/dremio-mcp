@@ -45,46 +45,18 @@ tl = Typer(
 
 @tl.command()
 def main(
-    dremio_uri: Annotated[
-        Optional[str], Option(help="Dremio URI", envvar="DREMIO_URI", show_envvar=True)
-    ] = None,
-    dremio_pat: Annotated[
-        Optional[str], Option(help="Dremio PAT", envvar="DREMIO_PAT", show_envvar=True)
-    ] = None,
-    project_id: Annotated[
-        Optional[str],
-        Option(help="Dremio Project ID", envvar="DREMIO_PROJECT_ID", show_envvar=True),
-    ] = None,
     config_file: Annotated[
         Optional[Path],
-        Option("-c", "--cfg", help="The config yaml for various options"),
-    ] = None,
-    api_key: Annotated[
-        Optional[str],
-        Option(help="API Key", envvar="LANGCHAIN_API_KEY", show_envvar=True),
-    ] = None,
-    openai_org: Annotated[
-        Optional[str],
         Option(
-            help="The OpenAI org Id", envvar="LANGCHAIN_OPENAI_ORG", show_envvar=True
+            "-c",
+            "--cfg",
+            help="The config yaml for various options",
+            show_default=True,
         ),
-    ] = None,
-    model: Annotated[
-        Optional[settings.Model], Option(help="Model to use", show_default=True)
-    ] = settings.Model.ollama,
+    ] = settings.default_config(),
 ):
 
     settings.configure(config_file)
-    settings.instance().with_overrides(
-        {
-            "langchain.llm": model,
-            "dremio.uri": dremio_uri,
-            "dremio.pat": dremio_pat,
-            "dremio.project_id": project_id,
-            "langchain.openai.org": openai_org,
-            "langchain.openai.api_key": api_key,
-        }
-    )
 
     custom_style = Style.from_dict(
         {
@@ -96,20 +68,19 @@ def main(
         history=FileHistory(Path("~/.mcp.history").expanduser()), style=custom_style
     )
 
-    match settings.instance().langchain.llm:
-        case settings.Model.ollama:
-            llm = ChatOllama(
-                model=settings.instance().langchain.ollama.model,
-                temperature=0,
-                verbose=True,
-            )
-        case _:
-            llm = ChatOpenAI(
-                model=settings.instance().langchain.openai.model,
-                temperature=0,
-                verbose=True,
-                api_key=settings.instance().langchain.openai.api_key,
-            )
+    if settings.instance().langchain.ollama is not None:
+        llm = ChatOllama(
+            model=settings.instance().langchain.ollama.model,
+            temperature=0,
+            verbose=True,
+        )
+    else:
+        llm = ChatOpenAI(
+            model=settings.instance().langchain.openai.model,
+            temperature=0,
+            verbose=True,
+            api_key=settings.instance().langchain.openai.api_key,
+        )
 
     executor = create_react_agent(
         model=llm,
