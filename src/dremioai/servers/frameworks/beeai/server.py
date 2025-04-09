@@ -4,7 +4,6 @@
 
 from typing import Union, Optional, Annotated, Any, AsyncGenerator, List, Dict
 from beeai_framework.agents.react.agent import ReActAgent, ReActAgentRunOutput
-from beeai_framework.agents.react.types import ModelKeysType
 from beeai_framework.backend.chat import ChatModel
 from beeai_framework.backend.types import ChatModelParameters
 from beeai_framework.tools.mcp_tools import MCPTool
@@ -121,7 +120,7 @@ async def create_react_agent(
     def create_agent(
         chat_model: ChatModel,
         tools: Optional[List[MCPTool]] = None,
-        system_prompt: Optional[Dict[ModelKeysType, PromptTemplate]] = None,
+        system_prompt: Optional[Dict[Any, PromptTemplate]] = None,
     ) -> ReActAgent:
         return ReActAgent(
             llm=chat_model,
@@ -134,7 +133,7 @@ async def create_react_agent(
 
     async def create_system_prompt(
         mcp_session: ClientSession,
-    ) -> Dict[ModelKeysType, PromptTemplate] | None:
+    ) -> Dict[Any, PromptTemplate] | None:
         tool_prompts = await mcp_session.list_prompts()
         for tp in tool_prompts.prompts:
             if tp.name == "system_prompt":
@@ -188,16 +187,15 @@ async def do_chat(model: str, ps: Prompt):
 app = Typer()
 
 
-@app.command(
-    context_settings=dict(help_option_names=["-h", "--help"]), no_args_is_help=True
-)
+@app.command(context_settings=dict(help_option_names=["-h", "--help"]))
 def main(
     config_file: Annotated[
         Optional[Path],
         Option("-c", "--cfg", help="The config yaml for various options"),
-    ],
+    ] = settings.default_config(),
 ):
     settings.configure(config_file)
+    pp(settings.instance().model_dump())
     if beeai := settings.instance().beeai:
         env_update = {}
         model = None
@@ -208,26 +206,34 @@ def main(
             if beeai.openai.model is not None:
                 env_update["OPENAI_CHAT_MODEL"] = beeai.openai.model
             model = "openai"
-        if beeai.anthropic is not None:
+        elif beeai.anthropic is not None:
             model = "anthropic"
             env_update["ANTHROPIC_API_KEY"] = beeai.anthropic.api_key
             if beeai.anthropic.chat_model is not None:
                 env_update["ANTHROPIC_CHAT_MODEL"] = beeai.anthropic.chat_model
+        elif beeai.ollama is not None:
+            model = f"ollama:{beeai.ollama.model}"
         environ.update(env_update)
 
     if model is None:
         raise ValueError(f"No chat model specified in {config_file}.")
 
     logger().info(f"Starting {model} chat model with {settings.instance()}")
+    history_file = Path("~/.mcp.history").expanduser()
+    if not history_file.exists():
+        history_file.touch()
     try:
-        readline.read_history_file("/tmp/history")
-    except FileNotFoundError:
+        readline.read_history_file("")
+    except (FileNotFoundError, PermissionError) as _:
         pass
 
     try:
         asyncio.run(do_chat(model, Prompt()))
     finally:
-        readline.write_history_file("/tmp/history")
+        try:
+            readline.write_history_file("/tmp/history")
+        except (FileNotFoundError, PermissionError) as _:
+            pass
 
 
 if __name__ == "__main__":

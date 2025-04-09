@@ -140,6 +140,7 @@ class BeeAI(BaseModel):
     sliding_memory_size: Optional[int] = Field(default=10, alias="slidingMemorySize")
     anthropic: Optional[Anthropic] = Field(default=None)
     openai: Optional[OpenAi] = Field(default=None)
+    ollama: Optional[Ollama] = Field(default=None)
     model_config = ConfigDict(validate_assignment=True)
 
 
