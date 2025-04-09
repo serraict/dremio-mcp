@@ -9,6 +9,8 @@ Table of Contents
         -   [Format](#format)
         -   [Modes](#modes)
     -   [The LLM (Claude) config file](#the-llm-claude-config-file)
+-   [Further Documentation](#further-documentation)
+-   [Additional Information](#additional-information)
 
 # Indroduction
 
@@ -140,3 +142,8 @@ This will pickup the default location of MCP server config file. It can also be 
 # Further documentation
 
 1. [Architecture](docs/architecture.md) : The details around Dremio MCP server architecture
+2. Other frameworks : (Experimental) Integrate the same MCP tools with other agentic frameworks like LangChain or BeeAI without modifying the code base.
+
+# Additional information
+
+This repository is intended to be open source software that encourages conributions of features, issues and fixes. This is not a part of Dremio product support.
