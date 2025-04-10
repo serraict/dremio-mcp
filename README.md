@@ -146,4 +146,4 @@ This will pickup the default location of MCP server config file. It can also be 
 
 # Additional information
 
-This repository is intended to be open source software that encourages conributions of features, issues and fixes. This is not a part of Dremio product support.
+This repository is intended to be open source software that encourages conributions of any kind, like adding features, reporting issues and contributing fixes. This is not a part of Dremio product support.
