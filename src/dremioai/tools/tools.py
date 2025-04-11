@@ -1,18 +1,18 @@
-# 
+#
 #  Copyright (C) 2017-2025 Dremio Corporation
-# 
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-# 
+#
 
 from typing import (
     List,
@@ -145,6 +145,8 @@ def is_tool_for(
             return False
 
     if (For := get_for(tool)) is not None:
+        if For & ToolType.EXPERIMENTAL and not dremio.enable_experimental:
+            return False
         return (For & tool_type) != 0  # == tool_type
     return False
 
@@ -197,13 +199,7 @@ class GetFailedJobDetails(Tools):
             from   sys.project.jobs_recent
             where to_date(submitted_ts) >= current_date - interval '7' day
             and status in ('CANCELED', 'FAILED')"""
-        jdf = await sql.run_query(
-            uri=self.dremio_uri,
-            pat=self.pat,
-            project_id=self.project_id,
-            query=query,
-            use_df=True,
-        )
+        jdf = await sql.run_query(query=query, use_df=True)
         jdf["date"] = jdf["startTime"].dt.date
 
         # lookup only those who have erorrs to get detailed error messages
@@ -244,13 +240,7 @@ class RunSqlQuery(Tools):
                 "The query contains a DML statement. Only select queries are allowed"
             )
 
-        df = await sql.run_query(
-            uri=self.dremio_uri,
-            pat=self.pat,
-            project_id=self.project_id,
-            query=s,
-            use_df=True,
-        )
+        df = await sql.run_query(query=s, use_df=True)
         return df.to_dict(orient="records")
 
     def get_parameters(self):
@@ -315,12 +305,11 @@ class GetUsefulSystemTableNames(Tools):
     async def invoke(self) -> List[Dict[str, str]]:
         """Gets the names of system tables in the dremio cluster, useful for various analysis.
         Use Get Schema of Table tool to get the schema of the table"""
-        project = ".project" if settings.instance().dremio.project_id else ""
         return {
-            f'sys{project}."tables"': (
+            f'information_schema."tables"': (
                 "Information about tables in this cluster."
                 "Be sure to filter out SYSTEM_TABLE for looking at user tables."
-                "You must encapsulate the naem TABLES in double quotes."
+                "You must encapsulate TABLES in double quotes."
             ),
         }
 
@@ -362,7 +351,12 @@ class GetTableOrViewLineage(Tools):
 
 
 class SemanticSearch(Tools):
-    For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS]]
+    For: ClassVar[
+        Annotated[
+            ToolType,
+            ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS | ToolType.EXPERIMENTAL,
+        ]
+    ]
 
     async def invoke(
         self, query: str, category: Optional[str] = None
@@ -420,9 +414,9 @@ def system_prompt():
     Note:
     - In general prefer to illustrate results using interactive graphical plots
     - Use UNNEST instead of FLATTEN for arrays like queriedDatasets
+    - Use ARRAY_TO_STRING([array], ',') to convert arrays to strings
     - Make sure to ensure reserved words like count, etc are enclosed in double quotes
     - Components in paths to views and tables must be double-quoted.
-    - SQL identifiers that are used in the queries must be double-quoted.
     - You must distinguish between user requests that intend to get a result of a SQL query or to generate SQL. The result of the former is the SQL query's result, the result of the latter is a SQL query.
     - You must use correct SQL syntax, you may use "EXPLAIN" to validate SQL or run it with LIMIT 1 to validate the syntax.
     - You must consider views/tables in all search results not just top 1 or 2. The search is not perfect.
@@ -430,11 +424,10 @@ def system_prompt():
     - When the user limits their request to a timeframe (e.g. month of a year or week or day), you must use the current year, month, week unless the user specifically asks for example for all Monday's, June's etc.
     - If the user prompt is in non English language, you must first translate it to English before attempting to search. Respond in the language of the user's prompt.
     - You must check your answer before finalizing the Result.
-    - You must use various SQL select statements to sample data from the tables to describe the table;
     - You must use various SQL select statements to calculate statistics and distribution of columns from the table;
     - You must use GetSchemaOfTable tool to get the schema of the table before running any queries on it.
     - You must prefer to return the results in a tabular format that can be consumed by a dataframe
-    - For graphical results, you must return results in a dataframe with information on how to plot the graph
+    - You must prefer to present results visually using charts and graphs
 
     """
 
