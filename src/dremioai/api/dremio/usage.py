@@ -1,20 +1,20 @@
-# 
+#
 #  Copyright (C) 2017-2025 Dremio Corporation
-# 
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-# 
+#
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Union, Optional, Any, Self
 
 from enum import auto
@@ -25,6 +25,7 @@ from dremioai.api.dremio.projects import get_engines_per_project
 import pandas as pd
 import itertools
 from dremioai import log
+from dremioai.config import settings
 
 
 class UsageType(UStrEnum):
@@ -43,6 +44,7 @@ class UsageData(BaseModel):
     start: datetime = Field(..., alias="startTime")
     end: datetime = Field(..., alias="endTime")
     usage: float
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Usage(BaseModel):
@@ -171,7 +173,7 @@ async def get_usage(
         us.append(await _get_usage(params))
 
     df = (
-        pd.DataFrame(data=(u.model_dump() for i in us for u in i.data))
+        pd.DataFrame(data=(u.model_dump(mode="json") for i in us for u in i.data))
         if use_df
         else us
     )
@@ -180,7 +182,9 @@ async def get_usage(
     return df
 
 
-async def get_consolidated_usage(uri: str, pat: str) -> List[pd.DataFrame]:
+async def get_consolidated_usage() -> List[pd.DataFrame]:
+    uri = settings.instance().dremio.uri
+    pat = settings.instance().dremio.pat
     results = await run_in_parallel(
         [get_engines_per_project(uri, pat), get_usage(uri, pat, use_df=True)]
     )
