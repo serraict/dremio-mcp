@@ -72,6 +72,10 @@ class Function:
 
 @dataclass
 class Tool:
+    """
+    A wrapper for integrating the same tool with LangChain based tool calling agents.
+    """
+
     type: Optional[str] = "function"
     function: Optional[Function] = None
 
@@ -266,9 +270,10 @@ class BuildUsageReport(Tools):
         Args:
             by: grouping the usage by 'PROJECT' or 'ENGINE'
         """
-        return await usage.get_consolidated_usage(
-            uri=self.dremio_uri, pat=self.pat, by=by
-        )
+        _, projects_usage, engines_usage = await usage.get_consolidated_usage()
+        if by == "PROJECT":
+            return projects_usage.to_dict(orient="records")
+        return engines_usage.to_dict(orient="records")
 
 
 class Resource(Tools):
