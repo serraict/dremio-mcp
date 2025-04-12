@@ -131,7 +131,6 @@ When adding new tools:
 
 2. Add appropriate tests
 3. Update documentation
-4. Add examples if needed
 
 ## Questions or Need Help?
 
