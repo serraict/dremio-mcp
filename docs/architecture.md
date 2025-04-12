@@ -1,18 +1,13 @@
-# Dremio MCP Server architecture
+# Dremio MCP Server Architecture
 
-## High level
+## High Level Overview
 
-At a high level, MCP Server and the [MCP protocol](https://modelcontextprotocol.io/) are standardizing the interface between LLMs and tools, prompts allowing easier integration and agentic workflow development
+The Dremio MCP Server implements the Model Context Protocol (MCP) specification to create a standardized interface between Large Language Models (LLMs) and Dremio's data platform. This architecture enables seamless integration between LLMs and Dremio's capabilities, allowing for natural language interactions with data and analytics workflows.
+
+### Core Components
 
 ```mermaid
-%%{init:
-{
-    "themeVariables": {
-        "fontFamily": "Inter"
-    }
-}
-}%%
-
+%%{init: { "themeVariables": { "fontFamily": "Inter" } } }%%
 flowchart LR
     subgraph "LLMs"
         LLM["LLMs like Claude, etc.."]
@@ -31,28 +26,37 @@ flowchart LR
     end
 ```
 
-## How does it work
+The architecture consists of three main components:
 
-The overall interaction for the MCP server can summarized as follows -
+1. **LLM Layer**:
+
+    - Handles natural language understanding and generation
+    - Makes intelligent decisions about which tools to use
+    - Processes results and generates human-readable responses
+
+2. **MCP Client/Host**:
+
+    - Provides the user interface (Claude desktop, IDEs, or other agents)
+    - Manages communication between LLMs and MCP servers
+    - Handles tool discovery and execution
+
+3. **MCP Servers**:
+    - Dremio MCP Server: Provides specialized tools for Dremio interaction
+    - Other MCP Servers: Can run alongside Dremio MCP server for additional capabilities
+    - Each server exposes a standardized interface through the MCP protocol
+
+## Interaction Flow
+
+The following diagram illustrates the detailed interaction flow between components:
 
 ```mermaid
-%%{init:
-{
-    "themeVariables": {
-        "fontFamily": "Inter"
-    }
-}
-}%%
-
-
+%%{init: { "themeVariables": { "fontFamily": "Inter" } } }%%
 sequenceDiagram
     participant User
-
     box Claude desktop / LLM / Agent
     participant Client as MCP Client / Frontend
     participant LLM as Claude LLM
     end
-
     participant MCP as MCPServer
     participant DB as Dremio
 
@@ -61,7 +65,6 @@ sequenceDiagram
         Client->>MCP: List tools and prompt
         MCP->>Client: Provides tools and prompt
     end
-
 
     Note over User,Client: What sales oriented tables do I have<br/>And what insights can you get from it
     User->>Client: Submits natural languate question
@@ -86,22 +89,37 @@ sequenceDiagram
     Client->>User: Delivers response
 ```
 
+### Interaction Steps:
+
+1. **Initialization Phase**:
+
+    - MCP Client discovers available MCP servers
+    - Each server provides its capabilities (tools) and prompts
+    - System establishes connections and validates access
+
+2. **Query Processing**:
+
+    - User submits natural language questions
+    - LLM analyzes the question and determines required tools
+    - Tools are executed through the MCP protocol
+    - Results are processed and returned to the user
+
+3. **Iterative Processing**:
+    - LLM may make multiple tool calls to gather complete information
+    - Each tool call is handled independently
+    - Results are accumulated and synthesized into final response
+
+## Tool Discovery and Initialization
+
+The following diagram shows how tools are discovered and initialized:
+
 ```mermaid
-%%{init:
-    {
-        "themeVariables": {
-            "fontFamily": "Inter"
-        }
-    }
-}%%
-
+%%{init: { "themeVariables": { "fontFamily": "Inter" } } }%%
 sequenceDiagram
-
     box Claude desktop / LLM / Agent
     participant LLM as Claude LLM
     participant Client as MCP Client / Frontend
     end
-
     participant MCP as MCPServer
 
     par Client to MCP
@@ -115,5 +133,22 @@ sequenceDiagram
         MCP --> Client: Returns tools, with arguments and description
         deactivate MCP
     end
-
 ```
+
+### Tool Discovery Process:
+
+1. **Prompt Discovery**:
+
+    - Client requests available prompts from MCP server
+    - Server returns specialized prompts for different use cases
+    - Prompts are cached for future use
+
+2. **Tool Discovery**:
+    - Client requests available tools from MCP server
+    - Server returns tool definitions including:
+        - Tool names and descriptions
+        - Required arguments and types
+        - Expected return values
+    - Tools are registered with the LLM for use
+
+This architecture enables flexible and extensible integration between LLMs and Dremio, allowing for natural language interaction with data while maintaining security and control through the MCP protocol.
