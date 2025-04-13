@@ -49,10 +49,10 @@ The `dremioai.config.settings` module provides a comprehensive configuration sys
 
 ```yaml
 dremio:
-    uri: <string|DremioCloudUri> # Dremio instance URI
-    pat: <string> # Personal Access Token
-    project_id: <string> # Optional: Project ID for Dremio Cloud
-    enable_experimental: <bool> # Optional: Enable experimental features
+  uri: <string|DremioCloudUri> # Dremio instance URI
+  pat: <string> # Personal Access Token
+  project_id: <string> # Optional: Project ID for Dremio Cloud
+  enable_experimental: <bool> # Optional: Enable experimental features
 ```
 
 URI can be specified as:
@@ -85,37 +85,37 @@ Multiple modes can be combined using comma separation: `FOR_SELF,FOR_PROMETHEUS`
 
 ```yaml
 prometheus:
-    uri: <string|HttpUrl> # Prometheus server URI
-    token: <string> # Authentication token
+  uri: <string|HttpUrl> # Prometheus server URI
+  token: <string> # Authentication token
 ```
 
 ### LangChain Settings
 
 ```yaml
 langchain:
-    llm: <Model> # LLM type (ollama/openai)
-    openai:
-        api_key: <string> # OpenAI API key
-        model: <string> # Model name (default: gpt-4)
-        org: <string> # Optional: Organization ID
-    ollama:
-        model: <string> # Model name (default: llama3.1)
+  llm: <Model> # LLM type (ollama/openai)
+  openai:
+    api_key: <string> # OpenAI API key
+    model: <string> # Model name (default: gpt-4)
+    org: <string> # Optional: Organization ID
+  ollama:
+    model: <string> # Model name (default: llama3.1)
 ```
 
 ### BeeAI Settings
 
 ```yaml
 beeai:
-    mcp_server:
-        command: <string> # MCP server command
-        args: <list[string]> # Command arguments
-        env: <dict[string, string]> # Environment variables
-    sliding_memory_size: <int> # Memory window size
-    anthropic:
-        api_key: <string> # Anthropic API key
-        chat_model: <string> # Chat model name
-    openai: <OpenAI> # OpenAI settings (same as LangChain)
-    ollama: <Ollama> # Ollama settings (same as LangChain)
+  mcp_server:
+    command: <string> # MCP server command
+    args: <list[string]> # Command arguments
+    env: <dict[string, string]> # Environment variables
+  sliding_memory_size: <int> # Memory window size
+  anthropic:
+    api_key: <string> # Anthropic API key
+    chat_model: <string> # Chat model name
+  openai: <OpenAI> # OpenAI settings (same as LangChain)
+  ollama: <Ollama> # Ollama settings (same as LangChain)
 ```
 
 ## Configuration Methods
@@ -128,18 +128,18 @@ Example:
 
 ```yaml
 dremio:
-    uri: "https://api.dremio.cloud"
-    pat: "@~/tokens/dremio.pat"
-    project_id: "project123"
+  uri: "https://api.dremio.cloud"
+  pat: "@~/tokens/dremio.pat"
+  project_id: "project123"
 
 tools:
-    server_mode: "FOR_SELF,FOR_DATA_PATTERNS"
+  server_mode: "FOR_SELF,FOR_DATA_PATTERNS"
 
 langchain:
-    llm: "openai"
-    openai:
-        api_key: "@~/tokens/openai.key"
-        model: "gpt-4"
+   llm: "openai"
+   openai:
+     api_key: "@~/tokens/openai.key"
+     model: "gpt-4"
 ```
 
 ### Environment Variables
