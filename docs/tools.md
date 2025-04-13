@@ -43,14 +43,49 @@ The `Tools` class serves as the base class for all tool implementations. Key fea
 
 ## Usage Example
 
-```python
-from dremioai.tools.tools import Tools, GetFailedJobDetails
+Tools can be tested directly from the command line using the `dremio-mcp-server tools` commands:
 
-# Initialize a tool
-tool = GetFailedJobDetails(uri="<dremio-uri>", pat="<pat>", project_id="<project-id>")
+### List Available Tools
 
-# Execute the tool
-result = await tool.invoke()
+To see all available tools for a specific mode:
+
+```bash
+$ uv run dremio-mcp-server tools list -m FOR_SELF
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃ Tool                     ┃ Description                                  ┃ For      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
+│ GetFailedJobDetails     │ Analyzes failed/canceled jobs over past 7d   │ FOR_SELF │
+│ BuildUsageReport        │ Generates usage reports by engines/projects  │ FOR_SELF │
+│ RunSqlQuery            │ Executes SELECT queries on Dremio cluster    │ FOR_SELF │
+└─────────────────────────┴──────────────────────────────────────────────┴──────────┘
+```
+
+### Execute a Specific Tool
+
+To test a specific tool with arguments:
+
+```bash
+$ uv run dremio-mcp-server tools invoke -t RunSqlQuery -c config.yaml args="query=SELECT * FROM sys.nodes"
+[
+  {
+    "node_id": "node1",
+    "node_type": "COORDINATOR",
+    "status": "UP",
+    "last_contact": "2024-01-20 10:30:00"
+  },
+  {
+    "node_id": "node2",
+    "node_type": "EXECUTOR",
+    "status": "UP",
+    "last_contact": "2024-01-20 10:29:55"
+  }
+]
+```
+
+Arguments are passed in the format `arg=value`. Multiple arguments can be provided:
+
+```bash
+$ uv run dremio-mcp-server tools invoke -t BuildUsageReport -c config.yaml args="start_date=2024-01-01,end_date=2024-01-20"
 ```
 
 ## Tool Development
