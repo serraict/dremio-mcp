@@ -41,9 +41,9 @@ The `Tools` class serves as the base class for all tool implementations. Key fea
 |                        | `GetMetricSchema`           | Returns metric labels and sample values                |
 |                        | `RunPromQL`                 | Executes Prometheus queries                            |
 
-## Usage Example
+## Usage (for testing)
 
-Tools can be tested directly from the command line using the `dremio-mcp-server tools` commands:
+While the tools are invoked directly from the LLM, it provides a command-line interface for testing and debugging. Tools can be tested directly from the command line using the `dremio-mcp-server tools` commands:
 
 ### List Available Tools
 
@@ -51,13 +51,13 @@ To see all available tools for a specific mode:
 
 ```bash
 $ uv run dremio-mcp-server tools list -m FOR_SELF
-┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
-┃ Tool                     ┃ Description                                  ┃ For      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
-│ GetFailedJobDetails     │ Analyzes failed/canceled jobs over past 7d   │ FOR_SELF │
-│ BuildUsageReport        │ Generates usage reports by engines/projects  │ FOR_SELF │
-│ RunSqlQuery            │ Executes SELECT queries on Dremio cluster    │ FOR_SELF │
-└─────────────────────────┴──────────────────────────────────────────────┴──────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃ Tool                  ┃ Description                                  ┃ For      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
+│ GetFailedJobDetails   │ Analyzes failed/canceled jobs over past 7d   │ FOR_SELF │
+│ BuildUsageReport      │ Generates usage reports by engines/projects  │ FOR_SELF │
+│ RunSqlQuery           │ Executes SELECT queries on Dremio cluster    │ FOR_SELF │
+└───────────────────────┴──────────────────────────────────────────────┴──────────┘
 ```
 
 ### Execute a Specific Tool
@@ -65,7 +65,8 @@ $ uv run dremio-mcp-server tools list -m FOR_SELF
 To test a specific tool with arguments:
 
 ```bash
-$ uv run dremio-mcp-server tools invoke -t RunSqlQuery -c config.yaml args="query=SELECT * FROM sys.nodes"
+$ uv run dremio-mcp-server tools invoke -t RunSqlQuery -c config.yaml \
+         args="query=SELECT * FROM sys.nodes"
 [
   {
     "node_id": "node1",
@@ -83,10 +84,6 @@ $ uv run dremio-mcp-server tools invoke -t RunSqlQuery -c config.yaml args="quer
 ```
 
 Arguments are passed in the format `arg=value`. Multiple arguments can be provided:
-
-```bash
-$ uv run dremio-mcp-server tools invoke -t BuildUsageReport -c config.yaml args="start_date=2024-01-01,end_date=2024-01-20"
-```
 
 ## Tool Development
 
