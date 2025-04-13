@@ -1,5 +1,32 @@
 # Dremio AI Settings Configuration
 
+## Default Configuration
+
+The default configuration file is located at:
+
+-   `$HOME/.config/dremioai/config.yaml` (Unix/macOS)
+-   `%XDG_CONFIG_HOME%/dremioai/config.yaml` (if XDG_CONFIG_HOME is set)
+
+You can view the default configuration (if it exists) and its location using the `dremio-mcp-server config list` command:
+
+```bash
+$ uv run dremio-mcp-server config list
+Default config file: /home/user/.config/dremioai/config.yaml (exists = True)
+dremio:
+  uri: https://api.dremio.cloud
+  pat: your-pat-here
+  project_id: project123
+tools:
+  server_mode: FOR_SELF
+```
+
+To only show the configuration file path without displaying its contents:
+
+```bash
+$ dremio-mcp-server config list --show-filename
+Default config file: /home/user/.config/dremioai/config.yaml (exists = True)
+```
+
 ## Overview
 
 The `dremioai.config.settings` module provides a comprehensive configuration system for managing various aspects of the Dremio AI tools and servers. It uses Pydantic for robust validation and type checking of configuration values.
@@ -8,13 +35,13 @@ The `dremioai.config.settings` module provides a comprehensive configuration sys
 
 ### Base Settings
 
-The main `Settings` class includes the following sections:
-
--   `dremio`: Dremio connection settings
--   `tools`: Tool-specific configurations
--   `prometheus`: Prometheus integration settings
--   `langchain`: LangChain framework settings
--   `beeai`: BeeAI framework settings
+| Section      | Description                     |
+| ------------ | ------------------------------- |
+| `dremio`     | Dremio connection settings      |
+| `tools`      | Tool-specific configurations    |
+| `prometheus` | Prometheus integration settings |
+| `langchain`  | LangChain framework settings    |
+| `beeai`      | BeeAI framework settings        |
 
 ## Configuration Sections
 
@@ -22,7 +49,7 @@ The main `Settings` class includes the following sections:
 
 ```yaml
 dremio:
-    uri: <string|HttpUrl|DremioCloudUri> # Dremio instance URI
+    uri: <string|DremioCloudUri> # Dremio instance URI
     pat: <string> # Personal Access Token
     project_id: <string> # Optional: Project ID for Dremio Cloud
     enable_experimental: <bool> # Optional: Enable experimental features
@@ -30,9 +57,8 @@ dremio:
 
 URI can be specified as:
 
--   Direct URL: `https://your-dremio-instance.com`
--   Predefined cloud: `PROD` (https://api.dremio.cloud) or `PRODEMEA` (https://api.eu.dremio.cloud)
--   HttpUrl object
+-   Direct URL: `https://your-dremio-instance`
+-   Predefined for Dremio cloud: `PROD` (https://api.dremio.cloud) or `PRODEMEA` (https://api.eu.dremio.cloud)
 
 PAT can be provided:
 
