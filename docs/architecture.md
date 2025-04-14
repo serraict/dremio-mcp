@@ -2,9 +2,12 @@
 
 ## High Level Overview
 
-The Dremio MCP Server implements the Model Context Protocol (MCP) specification to create a standardized interface between Large Language Models (LLMs) and Dremio's data platform. This architecture enables seamless integration between LLMs and Dremio's capabilities, allowing for natural language interactions with data and analytics workflows.
+The Dremio MCP Server implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) to create a standardized interface between Large Language Models (LLMs) and Dremio data platform. This architecture enables seamless integration between LLMs and Dremio's capabilities, allowing for natural language interactions with data and analytics workflows.
 
-### Core Components
+### What is MCP?
+
+At a glance, the MCP based architecture looks like this: 
+
 
 ```mermaid
 %%{init: { "themeVariables": { "fontFamily": "Inter" } } }%%
