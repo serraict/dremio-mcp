@@ -48,6 +48,7 @@ class Tools(BaseModel):
     server_mode: Annotated[
         Optional[Union[ToolType, int, str]], AfterValidator(_resolve_tools_settings)
     ] = Field(default=ToolType.FOR_SELF)
+    model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 
 
 class DremioCloudUri(StrEnum):
@@ -164,7 +165,10 @@ class Settings(BaseSettings):
     langchain: Optional[LangChain] = Field(default=None)
     beeai: Optional[BeeAI] = Field(default=None)
     model_config = SettingsConfigDict(
-        env_file=".env", env_nested_delimiter="_", env_extra="allow"
+        env_file=".env",
+        env_nested_delimiter="_",
+        env_extra="allow",
+        use_enum_values=True,
     )
 
     def with_overrides(self, overrides: Dict[str, Any]) -> Self:

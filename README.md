@@ -2,7 +2,7 @@
 
 Table of Contents
 
--   [Introduction](#indroduction)
+-   [Introduction](#introduction)
 -   [Installation](#installation)
 -   [Initial setup](#initial-setup)
     -   [MCP server config file](#mcp-server-config-file)
@@ -12,10 +12,9 @@ Table of Contents
 -   [Further Documentation](#further-documentation)
 -   [Additional Information](#additional-information)
 
-# Indroduction
+# Introduction
 
--   [The dremio section contains 3 main things - the URI to connect, PAT to use]
-    An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
+An **M**odel **C**ontext **P**rotocol ([MCP](https://docs.anthropic.com/en/docs/welcome)) server for easing LLM integration with Dremio.
 
 ```mermaid
 %%{init:
@@ -139,11 +138,35 @@ And then add this section
 
 This will pickup the default location of MCP server config file. It can also be passed in the `args` section above as `"--config-file", "<custom config file>"` after `run`
 
-# Further documentation
+# Further Documentation
 
-1. [Architecture](docs/architecture.md) : The details around Dremio MCP server architecture
-2. Other frameworks : (Experimental) Integrate the same MCP tools with other agentic frameworks like LangChain or BeeAI without modifying the code base.
+1. [Architecture](docs/architecture.md): Detailed overview of the Dremio MCP server architecture, including component interactions and data flows.
 
-# Additional information
+2. [Tools](docs/tools.md): Comprehensive guide to available tools, including:
+
+    - Tool categories and types
+    - Usage examples
+    - Development guidelines
+    - Integration support
+
+3. [Settings](docs/settings.md): Complete configuration reference covering:
+
+    - Dremio connection settings
+    - Tool configurations
+    - Framework integrations
+    - Environment variables
+
+4. Other frameworks: (Experimental) Integrate the same MCP tools with other agentic frameworks like LangChain or BeeAI without modifying the code base.
+
+# Additional Information
 
 This repository is intended to be open source software that encourages contributions of any kind, like adding features, reporting issues and contributing fixes. This is not a part of Dremio product support.
+
+## Contributing
+
+Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+-   Setting up your development environment
+-   Making contributions
+-   Code style guidelines
+-   Documentation requirements
