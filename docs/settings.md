@@ -49,10 +49,10 @@ The `dremioai.config.settings` module provides a comprehensive configuration sys
 
 ```yaml
 dremio:
-    uri: <string|DremioCloudUri> # Dremio instance URI
-    pat: <string> # Personal Access Token
-    project_id: <string> # Optional: Project ID for Dremio Cloud
-    enable_experimental: <bool> # Optional: Enable experimental features
+  uri: <string|DremioCloudUri> # Dremio instance URI
+  pat: <string> # Personal Access Token
+  project_id: <string> # Optional: Project ID for Dremio Cloud
+  enable_experimental: <bool> # Optional: Enable experimental features
 ```
 
 URI can be specified as:
@@ -69,7 +69,7 @@ PAT can be provided:
 
 ```yaml
 tools:
-    server_mode: <string|ToolType|int> # Tool types to enable
+  server_mode: <string|ToolType|int> # Tool types to enable
 ```
 
 Server modes:
@@ -110,17 +110,22 @@ langchain:
 
 ```yaml
 beeai:
-    mcp_server:
-      command: <string> # MCP server command
-      args: <list[string]> # Command arguments
-      env: <dict[string, string]> # Environment variables
-    sliding_memory_size: <int> # Memory window size
-    anthropic:
-      api_key: <string> # Anthropic API key
-      chat_model: <string> # Chat model name
-    openai: <OpenAI> # OpenAI settings (same as LangChain)
-    ollama: <Ollama> # Ollama settings (same as LangChain)
+  mcp_server:
+    command: "uv"
+    args:
+    - "run"
+    - "--directory"
+    - "<toplevel git directory>"
+    - "dremio-mcp-server"
+    - "run"
+  sliding_memory_size: <int> # Memory window size
+  anthropic:
+    api_key: <string> # Anthropic API key
+    chat_model: <string> # Chat model name
+  openai: <OpenAI> # OpenAI settings (same as LangChain)
+  ollama: <Ollama> # Ollama settings (same as LangChain)
 ```
+ 
 
 ## Configuration Methods
 
@@ -167,15 +172,6 @@ current.with_overrides({
     "dremio.uri": "https://new-uri.com",
     "tools.server_mode": "FOR_SELF"
 })
-```
-
-### Context Management
-
-The settings module supports context-based configuration:
-
-```python
-async def run_with_config(func, overrides=None):
-    return await settings.run_with(func, overrides=overrides)
 ```
 
 ## Validation
