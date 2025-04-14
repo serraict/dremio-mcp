@@ -56,9 +56,8 @@ langchain:
 ### Usage Example
 
 ```shell
-# Runs the LangChain server with all `tools` preconfigured in a simple
-# commandline interactive loop
-$ uv run python -m dremioai.servers.frameworks.langchain.server
+# Runs the BeeAI server with the MCP server on the commandline in an interactive loop
+$ uv run python -m dremioai.servers.frameworks.beeai.server
 ```
 
 Programmatic usage can be looked at in the [src/dremioai/servers/frameworks/beeai/server.py]
