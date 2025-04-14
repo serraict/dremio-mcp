@@ -31,18 +31,7 @@ Programmatic usage can be looked at in the [src/dremioai/servers/frameworks/lang
 
 ### Configuration
 
-Configure LangChain settings in your config file:
-
-```yaml
-langchain:
-  llm: "openai" # or "ollama"
-  openai:
-     api_key: "your-key"
-     model: "gpt-4"
-     org: "optional-org-id"
-   ollama:
-     model: "llama2"
-```
+Configure LangChain settings in your config file as mentioned in [settings](settings.md#langchain-settings-experimental)
 
 ## BeeAI Integration
 
@@ -64,25 +53,7 @@ Programmatic usage can be looked at in the [src/dremioai/servers/frameworks/beea
 
 ### Configuration
 
-Configure BeeAI settings in your config file:
-
-```yaml
-beeai:
-    mcp_server:
-        command: "dremio-mcp-server"
-        args: ["run"]
-        env:
-            MODE: "FOR_SELF"
-    sliding_memory_size: 10
-    anthropic:
-        api_key: "your-key"
-        chat_model: "claude-2"
-    openai:
-        api_key: "your-key"
-        model: "gpt-4"
-    ollama:
-        model: "llama3.3"
-```
+Configure BeeAI settings in your config file as mentioned in [settings](settings.md#beeai-settings-experimental
 
 ## See Also
 
