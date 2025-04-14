@@ -53,7 +53,7 @@ Programmatic usage can be looked at in the [src/dremioai/servers/frameworks/beea
 
 ### Configuration
 
-Configure BeeAI settings in your config file as mentioned in [settings](settings.md#beeai-settings-experimental
+Configure BeeAI settings in your config file as mentioned in [settings](settings.md#beeai-settings-experimental)
 
 ## See Also
 
