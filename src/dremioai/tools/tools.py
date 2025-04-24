@@ -42,7 +42,7 @@ from dremioai.api.dremio import sql, projects, usage, engines, search
 from dremioai.config import settings
 from dremioai.config.tools import ToolType
 from dremioai.api.prometheus import vm
-from dremioai.api.dremio.catalog import get_schema, get_lineage
+from dremioai.api.dremio.catalog import get_schema, get_lineage, get_descriptions
 from csv import reader
 from io import StringIO
 
@@ -157,6 +157,9 @@ def is_tool_for(
 
 class GetFailedJobDetails(Tools):
     For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF]]
+
+    def group_by(self, df, by):
+        return df.groupby(by).size().reset_index(name="count").to_dict(orient="records")
 
     async def invoke(self) -> Dict[str, Any]:
         """Get the stats and details of failed or canceled jobs executed in the Dremio cluster in the past 7 days
@@ -424,16 +427,14 @@ def system_prompt():
     - Components in paths to views and tables must be double-quoted.
     - You must distinguish between user requests that intend to get a result of a SQL query or to generate SQL. The result of the former is the SQL query's result, the result of the latter is a SQL query.
     - You must use correct SQL syntax, you may use "EXPLAIN" to validate SQL or run it with LIMIT 1 to validate the syntax.
+    - You must use the GetDescriptionOfTableOrSchema tool to get the descriptions of multiple tables and schemas before deciding the relevance.
     - You must consider views/tables in all search results not just top 1 or 2. The search is not perfect.
     - Consider sampling rows from multiple tables/views to understand what's in the data before deciding what table to use.
-    - When the user limits their request to a timeframe (e.g. month of a year or week or day), you must use the current year, month, week unless the user specifically asks for example for all Monday's, June's etc.
     - If the user prompt is in non English language, you must first translate it to English before attempting to search. Respond in the language of the user's prompt.
     - You must check your answer before finalizing the Result.
     - You must use various SQL select statements to calculate statistics and distribution of columns from the table;
     - You must use GetSchemaOfTable tool to get the schema of the table before running any queries on it.
-    - You must prefer to return the results in a tabular format that can be consumed by a dataframe
-    - You must prefer to present results visually using charts and graphs
-
+    - You must use organization ids instead of name when generating a final report
     """
 
 
@@ -454,6 +455,9 @@ class GetRelevantMetrics(Tools):
             "jobs_total": "Total number of jobs executed in the Dremio cluster",
             "jobs_failed_total": "Total number of failed jobs executed in the Dremio cluster",
             "jobs_command_pool_queue_size": "Total number of jobs queued before planning",
+            "jvm_gc_pause_seconds": "Indicates how long the JVM was paused for garbage collection, and also is a rubric to know if the system is in use",
+            "memory_heap_usage": "Indicates the amount of memory used by the JVM",
+            "memory_heap_committed": "Indicates the amount of memory committed by the JVM",
         }
 
 
@@ -489,3 +493,23 @@ class RunPromQL(Tools):
             promql_query, start="-7d", step="1h", use_df=True
         )
         return df.to_dict(orient="records")
+
+
+class GetDescriptionOfTableOrSchema(Tools):
+    For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS]]
+
+    async def invoke(self, name: Union[List[str], str]) -> Dict[str, Any]:
+        """
+        Given one or more table names or schema names, this will return the description of the table or schema, if any exists
+        as well as the description of any parent schemas
+
+        Args:
+          name: The name of the table or schema or a list of names of tables or schemas
+
+        Returns: A dictionary with
+            - key: a part of the table or schema name's heirarchy
+            - value: a dictionary with the description and tags
+        """
+        if isinstance(name, str):
+            name = [name]
+        return await get_descriptions(name)

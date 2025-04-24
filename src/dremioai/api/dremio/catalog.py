@@ -1,21 +1,21 @@
-# 
+#
 #  Copyright (C) 2017-2025 Dremio Corporation
-# 
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-# 
+#
 
 from pydantic import BaseModel, Field, AfterValidator, ValidationError
-from typing import Annotated, List, Dict, AnyStr, Any, Union, Optional
+from typing import Annotated, List, Set, Tuple, Dict, AnyStr, Any, Union, Optional
 from datetime import datetime
 from enum import StrEnum, auto
 from functools import partial
@@ -25,6 +25,7 @@ from dremioai.api.util import UStrEnum, run_in_parallel
 from dremioai.config import settings
 from csv import reader, excel
 from io import StringIO
+from functools import reduce
 
 
 class CatalogItemType(UStrEnum):
@@ -133,7 +134,7 @@ async def get_schema(
     project_id = settings.instance().dremio.project_id
     endpoint = f"/v0/projects/{project_id}/catalog" if project_id else "/api/v3/catalog"
     if by_id:
-        endpoint += dataset_path_or_id
+        endpoint += "/" + dataset_path_or_id
     else:
         if isinstance(dataset_path_or_id, str):
             dataset_path_or_id = list(
@@ -157,12 +158,11 @@ async def get_schema(
             except:
                 return {}
 
-        extras = ("tag", "wiki")
-        results = await run_in_parallel(
-            [_get(schema["id"], s) for s in ("tag", "wiki")]
-        )
+        extras = {"tag": ("tags", "tags"), "wiki": ("description", "text")}
+        results = await run_in_parallel([_get(schema["id"], s) for s in extras])
         for i, r in enumerate(extras):
-            schema.update(results[i][r])
+            k, v = extras[r]
+            schema[k] = results[i].get(r, {}).get(v)
     return schema
 
 
@@ -175,3 +175,53 @@ async def get_schemas(
     return await run_in_parallel(
         [get_schema(p, by_id, include_tags) for p in dataset_path_or_ids]
     )
+
+
+async def get_descriptions(
+    dataset_path_or_ids: List[Union[List[str], str]], by_id: Optional[bool] = False
+) -> Dict[str, Any]:
+    """
+    For each component of the path, get the descriptions, i.e. wiki and/or tags if defined
+    if by_id is True, then its parents are not considered
+    """
+
+    def get_components_of_path(path: List[str]) -> Set[Tuple[str]]:
+        return set(tuple(path[: i + 1]) for i in range(len(path)))
+
+    def to_str_path(path: List[str]) -> str:
+        return ".".join(f'"{p}"' for p in path)
+
+    def extract_description(s: Dict[str, Any]) -> Dict[str, Any]:
+        d = {v: s[v] for v in ("description", "tags") if v in s}
+        return d if d.get("description") or d.get("tags") else {}
+
+    components = set()
+    result = {}
+    while True:
+        schemas = await get_schemas(dataset_path_or_ids, by_id, include_tags=True)
+        rest = set()
+        for s in schemas:
+            if d := extract_description(s):
+                if "path" not in s:
+                    components.add(s["id"])
+                    result[s["name"]] = d
+                else:
+                    result[to_str_path(s["path"])] = d
+            rest = reduce(
+                lambda x, y: x | y,
+                [
+                    get_components_of_path(s["path"][:-1])
+                    for s in schemas
+                    if "path" in s
+                ],
+                set(),
+            )
+
+        if remaining := rest - components:
+            components |= remaining
+            dataset_path_or_ids = list(remaining)
+            continue
+        else:
+            break
+
+    return result
