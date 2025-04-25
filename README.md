@@ -2,15 +2,18 @@
 
 Table of Contents
 
--   [Introduction](#introduction)
--   [Installation](#installation)
--   [Initial setup](#initial-setup)
-    -   [MCP server config file](#mcp-server-config-file)
-        -   [Format](#format)
-        -   [Modes](#modes)
-    -   [The LLM (Claude) config file](#the-llm-claude-config-file)
--   [Further Documentation](#further-documentation)
--   [Additional Information](#additional-information)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Initial setup](#initial-setup)
+  - [Quick start](#quick-start)
+    - [Demo](#demo)
+  - [Configuartion details](#configuartion-details)
+    - [MCP server config file](#mcp-server-config-file)
+       - [Format](#format)
+       - [Modes](#modes)
+    - [The LLM (Claude) config file](#the-llm-claude-config-file)
+- [Further Documentation](#further-documentation)
+- [Additional Information](#additional-information)
 
 # Introduction
 
@@ -44,8 +47,11 @@ architecture-beta
 
 # Installation
 
--   The MCP server is python based and the only prerequiste is to install the package manager [uv](https://docs.astral.sh/uv/guides/install-python/)
--   Do a sanity check by doing
+The MCP server runs locally on the machine that runs the LLM frontend (eg Claude). The installation steps are simple
+
+1. Clone or download this repository. 
+2. Install the [uv](https://docs.astral.sh/uv/guides/install-python/) package manager. The MCP server requires python (3.11 or later)
+3. Do a sanity check by doing
 
 ```shell
 # cd <toplevel git dir> or add `--directory <toplevel git dir>`
@@ -75,11 +81,72 @@ There are two configurations necessary before the MCP server can be invoked.
 1. **The server config file**: This will cover the details of connecting and communicating with Dremio
 2. **The LLM config file**: This covers configuring the LLM desktop app (Claude for now) to make it aware of the MCP server
 
-## MCP server config file
+## Quick start
+
+The quickest way to do this setup is - 
+
+1. Create the dremio config file using 
+
+```shell
+$ uv run dremio-mcp-server config create dremio \
+    --uri <dremio uri> \
+    --pat <dremio pat> \
+    # optional: add your project ID if setting up for dremio cloud
+    # --project-id <dremio project id>
+```
+
+2. Download and install Claude desktop. And then create the Claude config file using 
+
+```shell
+$ uv run dremio-mcp-server config create claude
+```
+
+3. Validate the config files using 
+
+```shell
+$ uv run dremio-mcp-server config list --type claude`
+
+Default config file: '/Users/..../Library/Application Support/Claude/claude_desktop_config.json' (exists = True)
+{
+    'globalShortcut': '',
+    'mcpServers': {
+        'Dremio': {
+            'command': '/opt/homebrew/Cellar/uv/0.6.14/bin/uv',
+            'args': [
+                'run',
+                '--directory',
+                '...../dremio-mcp',
+                'dremio-mcp-server',
+                'run'
+            ]
+        }
+    }
+}
+
+$ uv run dremio-mcp-server config list --type claude`
+Default config file: /Users/..../.config/dremioai/config.yaml (exists = True)
+dremio:
+  enable_experimental: false
+  pat: ....
+  uri: ....
+tools:
+  server_mode: FOR_DATA_PATTERNS
+```
+
+**You are done!**. You can start Claude and start using the MCP server
+
+### Demo
+![Demo](assests/demo.gif)
+
+The rest of the documentation below provides details of the config files
+
+## Configuartion details
+
+### MCP server config file
 
 This file is located by default at `$HOME/.config/dremioai/config.yaml` but can be overriden using the `--config-file` option at runtime for `dremio-mcp-server`
 
-### Format
+#### Format
 
 ```yaml
 # The dremio section contains 3 main things - the URI to connect, PAT to use
@@ -100,7 +167,7 @@ tools:
 #token: ...
 ```
 
-### Modes
+#### Modes
 
 There are 3 modes
 
@@ -110,7 +177,7 @@ There are 3 modes
 
 Multiple modes can be specified with separated by `,`
 
-## The LLM (Claude) config file
+### The LLM (Claude) config file
 
 To setup the Claude config file (refer to [this as an example](https://modelcontextprotocol.io/quickstart/user#2-add-the-filesystem-mcp-server)) edit the Claude desktop config file
 
