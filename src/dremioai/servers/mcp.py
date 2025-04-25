@@ -29,8 +29,11 @@ from typer import Typer, Option, Argument, BadParameter
 from rich import console, table, print as pp
 from click import Choice
 from dremioai.config import settings
+from enum import StrEnum, auto
+from json import load, dump as jdump
+from shutil import which
 import asyncio
-from yaml import dump
+from yaml import dump, add_representer
 
 
 def init(
@@ -146,23 +149,158 @@ tc = Typer(
 )
 
 
+class ConfigTypes(StrEnum):
+    dremioai = auto()
+    claude = auto()
+
+
 @tc.command("list", help="Show default configuration, if it exists")
 def show_default_config(
     show_filename: Annotated[
         bool, Option(help="Show the filename for default config file")
     ] = False,
+    type: Annotated[
+        Optional[ConfigTypes],
+        Option(help="The type of configuration to show", show_default=True),
+    ] = ConfigTypes.dremioai,
 ):
-    dc = settings.default_config()
-    pp(f"Default config file: {dc!s} (exists = {dc.exists()!s})")
-    if not show_filename:
-        settings.configure(dc)
-        pp(
-            dump(
-                settings.instance().model_dump(
-                    exclude_none=True, mode="json", exclude_unset=True
+
+    match type:
+        case ConfigTypes.dremioai:
+            dc = settings.default_config()
+            pp(f"Default config file: {dc!s} (exists = {dc.exists()!s})")
+            if not show_filename:
+                settings.configure(dc)
+                pp(
+                    dump(
+                        settings.instance().model_dump(
+                            exclude_none=True, mode="json", exclude_unset=True
+                        )
+                    )
                 )
+        case ConfigTypes.claude:
+            cc = (
+                Path.home()
+                / "Library"
+                / "Application Support"
+                / "Claude"
+                / "claude_desktop_config.json"
             )
+            pp(f"Default config file: '{cc!s}' (exists = {cc.exists()!s})")
+            if not show_filename:
+                pp(load(cc.open()))
+
+
+cc = Typer(
+    context_settings=dict(help_option_names=["-h", "--help"]),
+    name="create",
+    help="Create DremioAI or LLM configuration files",
+)
+tc.add_typer(cc)
+
+
+@cc.command("claude", help="Create a default configuration file for Claude")
+def create_default_config(
+    dry_run: Annotated[
+        bool, Option(help="Dry run, do not overwrite the config file. Just print it")
+    ] = False,
+):
+    if (uv := which("uv")) is not None:
+        uv = Path(uv).resolve()
+        dir = str(Path(os.getcwd()).resolve())
+        dmcp = {
+            "Dremio": {
+                "command": str(uv),
+                "args": ["run", "--directory", dir, "dremio-mcp-server", "run"],
+            }
+        }
+        cc = (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Claude"
+            / "claude_desktop_config.json"
         )
+        c = load(cc.open()) if cc.exists() else {"mcpServers": {}}
+        c["mcpServers"].update(dmcp)
+        if dry_run:
+            pp(c)
+        else:
+            if not cc.exists():
+                cc.parent.mkdir(parents=True, exist_ok=True)
+            with cc.open("w") as f:
+                jdump(c, f)
+                pp(f"Created default config file: {cc!s}")
+    else:
+        raise FileNotFoundError("uv command not found. Please install uv")
+
+
+@cc.command("dremioai", help="Create a default configuration file")
+def create_default_config(
+    uri: Annotated[
+        str,
+        Option(
+            help=f"The Dremio URL or shorthand for Dremio Cloud regions ({ ','.join(settings.DremioCloudUri)})"
+        ),
+    ],
+    pat: Annotated[
+        str,
+        Option(
+            help="The Dremio PAT. If it starts with @ then treat the rest is treated as a filename"
+        ),
+    ],
+    project_id: Annotated[
+        Optional[str],
+        Option(help="The Dremio project id, only if connecting to Dremio Cloud"),
+    ] = None,
+    mode: Annotated[
+        Optional[List[str]],
+        Option("-m", "--mode", help="MCP server mode", click_type=Choice(_mode())),
+    ] = [tools.ToolType.FOR_DATA_PATTERNS.name],
+    enable_experimental: Annotated[
+        bool, Option(help="Enable experimental features")
+    ] = False,
+    dry_run: Annotated[
+        bool, Option(help="Dry run, do not overwrite the config file. Just print it")
+    ] = False,
+):
+    mode = "|".join([tools.ToolType[m.upper()].name for m in mode])
+    dremio = settings.Dremio.model_validate(
+        {
+            "uri": uri,
+            "pat": pat,
+            "project_id": project_id,
+            "enable_experimental": enable_experimental,
+        }
+    )
+    ts = settings.Tools.model_validate({"server_mode": tools.ToolType.FOR_SELF})
+    settings.configure(settings.default_config(), force=True)
+    settings.instance().dremio = dremio
+    settings.instance().tools = ts
+    d = settings.instance().model_dump(
+        exclude_none=True, mode="json", exclude_unset=True
+    )
+
+    add_representer(
+        str,
+        lambda dumper, data: dumper.represent_scalar(
+            "tag:yaml.org,2002:str", data, style=('"' if "@" in data else None)
+        ),
+    )
+    if pat.startswith("@") and d["dremio"]["pat"] != pat:
+        d["dremio"]["pat"] = pat
+    d["tools"]["server_mode"] = mode
+
+    if dry_run:
+        pp(dump(d))
+        return
+
+    dc = settings.default_config()
+    if not dc.exists():
+        dc.parent.mkdir(parents=True, exist_ok=True)
+    with dc.open("w") as f:
+        dump(d, f)
+        pp(f"Created default config file: {dc!s}")
 
 
 # --------------------------------------------------------------------------------
