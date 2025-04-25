@@ -131,6 +131,9 @@ dremio:
 tools:
   server_mode: FOR_DATA_PATTERNS
 ```
+
+**You are done!**. You can start Claude and start using the MCP server
+
 The rest of the documentation below provides details of the config files
 
 ## Configuartion details
