@@ -5,12 +5,12 @@ Table of Contents
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Initial setup](#initial-setup)
-    - [Quick start](#quick-start)
-    - [Configuartion details](#configuartion-details)
-      -   [MCP server config file](#mcp-server-config-file)
-        - [Format](#format)
-        - [Modes](#modes)
-      - [The LLM (Claude) config file](#the-llm-claude-config-file)
+  - [Quick start](#quick-start)
+  - [Configuartion details](#configuartion-details)
+    - [MCP server config file](#mcp-server-config-file)
+       - [Format](#format)
+       - [Modes](#modes)
+    - [The LLM (Claude) config file](#the-llm-claude-config-file)
 - [Further Documentation](#further-documentation)
 - [Additional Information](#additional-information)
 
@@ -87,7 +87,7 @@ The quickest way to do this setup is -
 1. Create the dremio config file using 
 
 ```shell
-uv run dremio-mcp-server config create dremio \
+$ uv run dremio-mcp-server config create dremio \
     --uri <dremio uri> \
     --pat <dremio pat> \
     # optional: add your project ID if setting up for dremio cloud
@@ -97,7 +97,7 @@ uv run dremio-mcp-server config create dremio \
 2. Download and install Claude desktop. And then create the Claude config file using 
 
 ```shell
-uv run dremio-mcp-server config create claude
+$ uv run dremio-mcp-server config create claude
 ```
 
 3. Validate the config files using 
@@ -105,7 +105,7 @@ uv run dremio-mcp-server config create claude
 ```shell
 $ uv run dremio-mcp-server config list --type claude`
 
-Default config file: '/Users/aniket.kulkarni/Library/Application Support/Claude/claude_desktop_config.json' (exists = True)
+Default config file: '/Users/..../Library/Application Support/Claude/claude_desktop_config.json' (exists = True)
 {
     'globalShortcut': '',
     'mcpServers': {
@@ -114,7 +114,7 @@ Default config file: '/Users/aniket.kulkarni/Library/Application Support/Claude/
             'args': [
                 'run',
                 '--directory',
-                '/Users/aniket.kulkarni/ws/github/dremio-mcp',
+                '...../dremio-mcp',
                 'dremio-mcp-server',
                 'run'
             ]
@@ -123,7 +123,7 @@ Default config file: '/Users/aniket.kulkarni/Library/Application Support/Claude/
 }
 
 $ uv run dremio-mcp-server config list --type claude`
-Default config file: /Users/aniket.kulkarni/.config/dremioai/config.yaml (exists = True)
+Default config file: /Users/..../.config/dremioai/config.yaml (exists = True)
 dremio:
   enable_experimental: false
   pat: ....
