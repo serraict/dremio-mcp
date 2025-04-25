@@ -6,6 +6,7 @@ Table of Contents
 - [Installation](#installation)
 - [Initial setup](#initial-setup)
   - [Quick start](#quick-start)
+    - [Demo](#demo)
   - [Configuartion details](#configuartion-details)
     - [MCP server config file](#mcp-server-config-file)
        - [Format](#format)
@@ -133,6 +134,9 @@ tools:
 ```
 
 **You are done!**. You can start Claude and start using the MCP server
+
+### Demo
+![Demo](assests/demo.gif)
 
 The rest of the documentation below provides details of the config files
 
