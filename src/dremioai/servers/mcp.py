@@ -219,16 +219,11 @@ def create_default_mcpserver_config() -> Dict[str, Any]:
         raise FileNotFoundError("uv command not found. Please install uv")
 
 
-@cc.command("claude", help="Create a default configuration file for Claude")
-def create_default_config(
-    dry_run: Annotated[
-        bool, Option(help="Dry run, do not overwrite the config file. Just print it")
-    ] = False,
-):
+def create_default_config_helper(dry_run: bool):
     cc = get_claude_config_path()
-    dcmp = {"Dremio": cc}
+    dcmp = {"Dremio": create_default_mcpserver_config()}
     c = load(cc.open()) if cc.exists() else {"mcpServers": {}}
-    c["mcpServers"].update(dcmp)
+    c.setdefault("mcpServers", {}).update(dcmp)
     if dry_run:
         pp(c)
         return
@@ -239,6 +234,15 @@ def create_default_config(
     with cc.open("w") as f:
         jdump(c, f)
         pp(f"Created default config file: {cc!s}")
+
+
+@cc.command("claude", help="Create a default configuration file for Claude")
+def create_default_config(
+    dry_run: Annotated[
+        bool, Option(help="Dry run, do not overwrite the config file. Just print it")
+    ] = False,
+):
+    create_default_config_helper(dry_run)
 
 
 @cc.command("dremioai", help="Create a default configuration file")
