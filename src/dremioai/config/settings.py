@@ -20,7 +20,7 @@ from typing import Optional, Union, Annotated, Self, List, Dict, Any, Callable
 from dremioai.config.tools import ToolType
 from enum import auto, StrEnum
 from pathlib import Path
-from yaml import safe_load
+from yaml import safe_load, add_representer, dump
 from functools import reduce
 from operator import ior
 from shutil import which
@@ -150,8 +150,8 @@ class Anthropic(BaseModel):
 
 
 class BeeAI(BaseModel):
-    mcp_server: Optional[MCPServer] = Field(default=None, alias="mcpServer")
-    sliding_memory_size: Optional[int] = Field(default=10, alias="slidingMemorySize")
+    mcp_server: Optional[MCPServer] = Field(default=None)
+    sliding_memory_size: Optional[int] = Field(default=10)
     anthropic: Optional[Anthropic] = Field(default=None)
     openai: Optional[OpenAi] = Field(default=None)
     ollama: Optional[Ollama] = Field(default=None)
@@ -223,9 +223,14 @@ def configure(cfg: Union[str, Path] = None, force=False) -> ContextVar[Settings]
     if cfg is None:
         cfg = default_config()
 
+    if not cfg.exists():
+        print(f"Creating default config file: {cfg!s}")
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.touch()
+
     with cfg.open() as f:
         s = safe_load(f)
-        _settings.set(Settings.model_validate(s))
+        _settings.set(Settings.model_validate(s if s else {}))
 
     return _settings
 
@@ -261,3 +266,31 @@ async def run_with(
 
     ctx = copy_context()
     return await _call()
+
+
+def write_settings(
+    cfg: Path = None, inst: Settings = None, dry_run: bool = False
+) -> str | None:
+    if cfg is None:
+        cfg = default_config()
+
+    if not isinstance(inst, Settings):
+        inst = instance()
+
+    d = inst.model_dump(
+        exclude_none=True, mode="json", exclude_unset=True, by_alias=True
+    )
+    add_representer(
+        str,
+        lambda dumper, data: dumper.represent_scalar(
+            "tag:yaml.org,2002:str", data, style=('"' if "@" in data else None)
+        ),
+    )
+    if dry_run:
+        return dump(d)
+
+    if not cfg.exists() or not cfg.parent.exists():
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+
+    with cfg.open("w") as f:
+        dump(d, f)

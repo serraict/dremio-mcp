@@ -17,10 +17,11 @@
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import Prompt
 from mcp.server.fastmcp.resources import FunctionResource
+from mcp.cli.claude import get_claude_config_path
 from pydantic.networks import AnyUrl
 from dremioai.tools import tools
 import os
-from typing import List, Union, Annotated, Optional, Tuple
+from typing import List, Union, Annotated, Optional, Tuple, Dict, Any
 from functools import reduce
 from operator import ior
 from pathlib import Path
@@ -34,6 +35,7 @@ from json import load, dump as jdump
 from shutil import which
 import asyncio
 from yaml import dump, add_representer
+import sys
 
 
 def init(
@@ -71,10 +73,10 @@ def init(
 
 
 app = None
-if __name__ != "__main__":
-    if mode := os.environ.get("MODE"):
-        mode = [tools.ToolType[m.upper()] for m in ",".split(mode)]
-    app = init(mode=mode)
+# if __name__ != "__main__":
+# if mode := os.environ.get("MODE"):
+# mode = [tools.ToolType[m.upper()] for m in ",".split(mode)]
+# app = init(mode=mode)
 
 
 def _mode() -> List[str]:
@@ -154,6 +156,18 @@ class ConfigTypes(StrEnum):
     claude = auto()
 
 
+def get_claude_config_path() -> Path:
+    # copy of the function from mcp sdk, but returns the path whether or not
+    # it exists
+    dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"), "Claude")
+    match sys.platform:
+        case "win32":
+            dir = Path(Path.home(), "AppData", "Roaming", "Claude")
+        case "darwin":
+            dir = Path(Path.home(), "Library", "Application Support", "Claude")
+    return dir / "claude_desktop_config.json"
+
+
 @tc.command("list", help="Show default configuration, if it exists")
 def show_default_config(
     show_filename: Annotated[
@@ -179,13 +193,7 @@ def show_default_config(
                     )
                 )
         case ConfigTypes.claude:
-            cc = (
-                Path.home()
-                / "Library"
-                / "Application Support"
-                / "Claude"
-                / "claude_desktop_config.json"
-            )
+            cc = get_claude_config_path()
             pp(f"Default config file: '{cc!s}' (exists = {cc.exists()!s})")
             if not show_filename:
                 pp(load(cc.open()))
@@ -199,40 +207,42 @@ cc = Typer(
 tc.add_typer(cc)
 
 
+def create_default_mcpserver_config() -> Dict[str, Any]:
+    if (uv := which("uv")) is not None:
+        uv = Path(uv).resolve()
+        dir = str(Path(os.getcwd()).resolve())
+        return {
+            "command": str(uv),
+            "args": ["run", "--directory", dir, "dremio-mcp-server", "run"],
+        }
+    else:
+        raise FileNotFoundError("uv command not found. Please install uv")
+
+
+def create_default_config_helper(dry_run: bool):
+    cc = get_claude_config_path()
+    dcmp = {"Dremio": create_default_mcpserver_config()}
+    c = load(cc.open()) if cc.exists() else {"mcpServers": {}}
+    c.setdefault("mcpServers", {}).update(dcmp)
+    if dry_run:
+        pp(c)
+        return
+
+    if not cc.exists():
+        cc.parent.mkdir(parents=True, exist_ok=True)
+
+    with cc.open("w") as f:
+        jdump(c, f)
+        pp(f"Created default config file: {cc!s}")
+
+
 @cc.command("claude", help="Create a default configuration file for Claude")
 def create_default_config(
     dry_run: Annotated[
         bool, Option(help="Dry run, do not overwrite the config file. Just print it")
     ] = False,
 ):
-    if (uv := which("uv")) is not None:
-        uv = Path(uv).resolve()
-        dir = str(Path(os.getcwd()).resolve())
-        dmcp = {
-            "Dremio": {
-                "command": str(uv),
-                "args": ["run", "--directory", dir, "dremio-mcp-server", "run"],
-            }
-        }
-        cc = (
-            Path.home()
-            / "Library"
-            / "Application Support"
-            / "Claude"
-            / "claude_desktop_config.json"
-        )
-        c = load(cc.open()) if cc.exists() else {"mcpServers": {}}
-        c["mcpServers"].update(dmcp)
-        if dry_run:
-            pp(c)
-        else:
-            if not cc.exists():
-                cc.parent.mkdir(parents=True, exist_ok=True)
-            with cc.open("w") as f:
-                jdump(c, f)
-                pp(f"Created default config file: {cc!s}")
-    else:
-        raise FileNotFoundError("uv command not found. Please install uv")
+    create_default_config_helper(dry_run)
 
 
 @cc.command("dremioai", help="Create a default configuration file")
@@ -273,7 +283,7 @@ def create_default_config(
             "enable_experimental": enable_experimental,
         }
     )
-    ts = settings.Tools.model_validate({"server_mode": tools.ToolType.FOR_SELF})
+    ts = settings.Tools.model_validate({"server_mode": mode})
     settings.configure(settings.default_config(), force=True)
     settings.instance().dremio = dremio
     settings.instance().tools = ts
