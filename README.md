@@ -49,7 +49,7 @@ architecture-beta
 
 The MCP server runs locally on the machine that runs the LLM frontend (eg Claude). The installation steps are simple
 
-1. Clone or download this repository. 
+1. Clone or download this repository.
 2. Install the [uv](https://docs.astral.sh/uv/guides/install-python/) package manager. The MCP server requires python (3.11 or later)
 3. Do a sanity check by doing
 
@@ -83,9 +83,9 @@ There are two configurations necessary before the MCP server can be invoked.
 
 ## Quick start
 
-The quickest way to do this setup is - 
+The quickest way to do this setup is -
 
-1. Create the dremio config file using 
+1. Create the dremio config file using
 
 ```shell
 $ uv run dremio-mcp-server config create dremio \
@@ -95,13 +95,13 @@ $ uv run dremio-mcp-server config create dremio \
     # --project-id <dremio project id>
 ```
 
-2. Download and install Claude desktop. And then create the Claude config file using 
+2. Download and install Claude desktop. And then create the Claude config file using
 
 ```shell
 $ uv run dremio-mcp-server config create claude
 ```
 
-3. Validate the config files using 
+3. Validate the config files using
 
 ```shell
 $ uv run dremio-mcp-server config list --type claude`
@@ -229,6 +229,18 @@ This will pickup the default location of MCP server config file. It can also be 
 
 This repository is intended to be open source software that encourages contributions of any kind, like adding features, reporting issues and contributing fixes. This is not a part of Dremio product support.
 
+## Testing
+
+The project uses pytest for testing. To run the tests:
+
+```shell
+# Run all tests
+$ uv run pytest tests
+
+```
+
+GitHub Actions automatically runs tests on pull requests and pushes to the main branch.
+
 ## Contributing
 
 Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
@@ -237,3 +249,4 @@ Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
 -   Making contributions
 -   Code style guidelines
 -   Documentation requirements
+-   Running tests
