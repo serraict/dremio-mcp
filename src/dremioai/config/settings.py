@@ -281,7 +281,6 @@ def configure(cfg: Union[str, Path] = None, force=False) -> ContextVar[Settings]
         cfg = default_config()
 
     if not cfg.exists():
-        print(f"Creating default config file: {cfg!s}")
         cfg.parent.mkdir(parents=True, exist_ok=True)
         cfg.touch()
 
