@@ -439,7 +439,7 @@ def system_prompt():
 
 
 class GetRelevantMetrics(Tools):
-    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS | ToolType.FOR_SELF]]
+    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS]]
 
     async def invoke(self) -> Dict[str, Any]:
         """
@@ -462,7 +462,7 @@ class GetRelevantMetrics(Tools):
 
 
 class GetMetricSchema(Tools):
-    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS | ToolType.FOR_SELF]]
+    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS]]
 
     async def invoke(self, metric: str) -> Dict[str, Any]:
         """
@@ -480,7 +480,7 @@ class GetMetricSchema(Tools):
 
 
 class RunPromQL(Tools):
-    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS | ToolType.FOR_SELF]]
+    For: ClassVar[Annotated[ToolType, ToolType.FOR_PROMETHEUS]]
 
     async def invoke(self, promql_query: str) -> Dict[str, Any]:
         """
