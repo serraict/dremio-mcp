@@ -7,7 +7,7 @@ Table of Contents
 - [Initial setup](#initial-setup)
   - [Quick start](#quick-start)
     - [Demo](#demo)
-  - [Configuartion details](#configuartion-details)
+  - [Configuration details](#configuration-details)
     - [MCP server config file](#mcp-server-config-file)
        - [Format](#format)
        - [Modes](#modes)
@@ -88,11 +88,19 @@ The quickest way to do this setup is -
 1. Create the dremio config file using
 
 ```shell
-$ uv run dremio-mcp-server config create dremio \
+$ uv run dremio-mcp-server config create dremioai \
     --uri <dremio uri> \
     --pat <dremio pat> \
     # optional: add your project ID if setting up for dremio cloud
     # --project-id <dremio project id>
+```
+
+Note: For security purposes, if you don't want the PAT to leak into your shell history file, create a file with your PAT in it and give it as an argument to the dremio config. Example: 
+
+```shell
+$ uv run dremio-mcp-server config create dremioai \
+    --uri <dremio uri> \
+    --pat @/path/to/tokenfile \
 ```
 
 2. Download and install Claude desktop. And then create the Claude config file using
@@ -104,7 +112,7 @@ $ uv run dremio-mcp-server config create claude
 3. Validate the config files using
 
 ```shell
-$ uv run dremio-mcp-server config list --type claude`
+$ uv run dremio-mcp-server config list --type claude
 
 Default config file: '/Users/..../Library/Application Support/Claude/claude_desktop_config.json' (exists = True)
 {
@@ -123,7 +131,7 @@ Default config file: '/Users/..../Library/Application Support/Claude/claude_desk
     }
 }
 
-$ uv run dremio-mcp-server config list --type claude`
+$ uv run dremio-mcp-server config list --type claude
 Default config file: /Users/..../.config/dremioai/config.yaml (exists = True)
 dremio:
   enable_experimental: false
@@ -136,11 +144,11 @@ tools:
 **You are done!**. You can start Claude and start using the MCP server
 
 ### Demo
-![Demo](assests/demo.gif)
+![Demo](assets/demo.gif)
 
 The rest of the documentation below provides details of the config files
 
-## Configuartion details
+## Configuration details
 
 ### MCP server config file
 
