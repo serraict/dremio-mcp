@@ -272,7 +272,7 @@ class RunSqlQuery(Tools):
             "The query contains a DML statement. Only select queries are allowed"
         )
 
-    async def invoke(self, s: str) -> Dict[str, List[Any]]:
+    async def invoke(self, s: str) -> Dict[str, Any]:
         """Run a SELECT sql query on the Dremio cluster and return the results.
         Ensure that SQL keywords like 'day', 'month', 'count', 'table' etc are enclosed in double quotes
         You are premitted to run only SELECT queries. No DML statements are allowed.
@@ -284,7 +284,14 @@ class RunSqlQuery(Tools):
         try:
             s = f"/* dremioai: submitter={self.__class__.__name__} */\n{s}"
             df = await sql.run_query(query=s, use_df=True)
-            return df.to_dict(orient="records")
+
+            # Return in a structured format for better MCP client parsing
+            return {
+                "rows": df.to_dict(orient="records"),
+                "columns": list(df.columns),
+                "row_count": len(df),
+                "dtypes": {col: str(dtype) for col, dtype in df.dtypes.items()},
+            }
         except RuntimeError as e:
             return {
                 "error": str(e),
@@ -354,13 +361,17 @@ class GetUsefulSystemTableNames(Tools):
     async def invoke(self) -> List[Dict[str, str]]:
         """Gets the names of system tables in the dremio cluster, useful for various analysis.
         Use Get Schema of Table tool to get the schema of the table"""
-        return {
-            f'information_schema."tables"': (
-                "Information about tables in this cluster."
-                "Be sure to filter out SYSTEM_TABLE for looking at user tables."
-                "You must encapsulate TABLES in double quotes."
-            ),
-        }
+        return [
+            {
+                "table_name": 'information_schema."tables"',
+                "description": (
+                    "Information about tables in this cluster. "
+                    "Be sure to filter out SYSTEM_TABLE for "
+                    "looking at user tables. "
+                    "You must encapsulate TABLES in double quotes."
+                ),
+            }
+        ]
 
 
 class GetSchemaOfTable(Tools):
@@ -373,15 +384,50 @@ class GetSchemaOfTable(Tools):
             table_name: name of the table, including the schema
 
         Returns:
-            A dictionary with information about the table. The field "fields" is a list of dictionaries
-            that give column names and types. Optionally :"text" field and "tag" filed can provide more
-            information about the table
+            A list containing a dictionary with information about the table.
+            The field "fields" is a list of dictionaries that give column
+            names and types. Optionally "text" field and "tag" field can
+            provide more information about the table
         """
         paths = list(reader(StringIO(table_name), delimiter="."))
         result = await get_schema(paths[0], include_tags=True)
         if result and "sql" in result:
             del result["sql"]
-        return result
+
+        if result:
+            # Convert complex fields to strings for MCP client compatibility
+            formatted_result = {}
+            for key, value in result.items():
+                if key == "path" and isinstance(value, list):
+                    formatted_result[key] = ".".join(value)
+                elif key == "fields" and isinstance(value, list):
+                    # Convert fields list to a readable string format
+                    field_strings = []
+                    for field_dict in value:
+                        if isinstance(field_dict, dict):
+                            field_name = field_dict.get("name", "unknown")
+                            field_type = field_dict.get("type", {})
+                            if isinstance(field_type, dict):
+                                type_name = field_type.get("name", "unknown")
+                            else:
+                                type_name = str(field_type)
+                            field_strings.append(f"{field_name}: {type_name}")
+                    formatted_result[key] = "\n".join(field_strings)
+                elif key == "tags" and isinstance(value, list):
+                    # Convert tags list to comma-separated string
+                    if value:
+                        tag_str = ", ".join(str(tag) for tag in value)
+                    else:
+                        tag_str = ""
+                    formatted_result[key] = tag_str
+                else:
+                    if value is not None:
+                        formatted_result[key] = str(value)
+                    else:
+                        formatted_result[key] = ""
+
+            return [formatted_result]
+        return []
 
 
 class GetTableOrViewLineage(Tools):
@@ -535,7 +581,12 @@ class RunPromQL(Tools):
         df = await vm.get_promql_result(
             promql_query, start="-7d", step="1h", use_df=True
         )
-        return df.to_dict(orient="records")
+        # Return in a structured format for better MCP client parsing
+        return {
+            "metrics": df.to_dict(orient="records"),
+            "columns": list(df.columns),
+            "row_count": len(df),
+        }
 
 
 class GetDescriptionOfTableOrSchema(Tools):

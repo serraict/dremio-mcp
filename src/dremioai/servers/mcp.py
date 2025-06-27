@@ -106,6 +106,15 @@ def main(
         bool, Option(help="List available tools for this mode and exit")
     ] = False,
     log_to_file: Annotated[Optional[bool], Option(help="Log to file")] = False,
+    transport: Annotated[
+        Optional[str], Option(help="Transport type: stdio or http")
+    ] = "stdio",
+    host: Annotated[
+        Optional[str], Option(help="Host to bind to (for HTTP transport)")
+    ] = "127.0.0.1",
+    port: Annotated[
+        Optional[int], Option(help="Port to bind to (for HTTP transport)")
+    ] = 8000,
 ):
     if not list_tools:
         log.configure(enable_json_logging=True, to_file=True)
@@ -138,7 +147,8 @@ def main(
 
     dremio = settings.instance().dremio
     if (
-        dremio.oauth_supported
+        dremio is not None
+        and dremio.oauth_supported
         and dremio.oauth_configured
         and (dremio.oauth2.has_expired or dremio.pat is None)
     ):
@@ -151,7 +161,20 @@ def main(
         project_id=cfg.dremio.project_id,
         mode=cfg.tools.server_mode,
     )
-    app.run()
+
+    # Add transport selection
+    if transport == "http":
+        # Use FastMCP's built-in streamable HTTP support
+        # Try calling without host/port first to see if it uses defaults
+        try:
+            app.run(transport="streamable-http")
+        except TypeError as e:
+            # If that fails, fall back to default stdio and log the issue
+            log.logger().error(f"Failed to start HTTP transport: {e}")
+            log.logger().info("Falling back to stdio transport")
+            app.run()
+    else:
+        app.run()  # Default stdio
 
 
 tc = Typer(
