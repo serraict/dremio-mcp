@@ -164,12 +164,18 @@ def main(
 
     # Add transport selection
     if transport == "http":
-        # Use FastMCP's built-in streamable HTTP support
-        # Try calling without host/port first to see if it uses defaults
+        # Use our custom streamable HTTP server
         try:
-            app.run(transport="streamable-http")
-        except TypeError as e:
-            # If that fails, fall back to default stdio and log the issue
+            from .streamable_http import create_streamable_http_server
+
+            log.logger().info(f"Starting HTTP server on {host}:{port}")
+            http_server = create_streamable_http_server(app)
+            http_server.run(host=host, port=port)
+        except ImportError as e:
+            log.logger().error(f"Failed to import streamable HTTP server: {e}")
+            log.logger().info("Falling back to stdio transport")
+            app.run()
+        except Exception as e:
             log.logger().error(f"Failed to start HTTP transport: {e}")
             log.logger().info("Falling back to stdio transport")
             app.run()
