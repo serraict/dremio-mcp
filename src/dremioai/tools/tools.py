@@ -352,7 +352,7 @@ class Hints(Resource):
 class GetUsefulSystemTableNames(Tools):
     For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS]]
 
-    async def invoke(self) -> List[Dict[str, str]]:
+    async def invoke(self) -> Dict[str, str]:
         """Gets the names of system tables in the dremio cluster, useful for various analysis.
         Use Get Schema of Table tool to get the schema of the table"""
         return {
@@ -367,7 +367,7 @@ class GetUsefulSystemTableNames(Tools):
 class GetSchemaOfTable(Tools):
     For: ClassVar[Annotated[ToolType, ToolType.FOR_SELF | ToolType.FOR_DATA_PATTERNS]]
 
-    async def invoke(self, table_name: Union[str | List[str]]) -> List[Dict[str, str]]:
+    async def invoke(self, table_name: Union[str | List[str]]) -> Dict[str, Any]:
         """Gets the schema of the given table.
 
         Args:
