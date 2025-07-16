@@ -14,7 +14,7 @@ from unittest.mock import patch
 from dremioai.tools.tools import GetUsefulSystemTableNames, GetSchemaOfTable
 
 
-async def mock_mcp_validate_tool_output(tool):
+async def mock_mcp_validate_tool_output(tool, *args, **kwargs):
     """
     Test how FastMCP validates tool outputs using function type annotations.
 
@@ -24,26 +24,21 @@ async def mock_mcp_validate_tool_output(tool):
     """
     type_hints = get_type_hints(tool.invoke)
     expected_type = type_hints["return"]
-    actual_output = await tool.invoke()
-
+    actual_output = await tool.invoke(*args, **kwargs)
     type_adapter = TypeAdapter(expected_type)
     type_adapter.validate_python(actual_output)
 
 
 @pytest.mark.asyncio
-async def test_GetUsefulSystemTableNames_validation():
-    tool1 = GetUsefulSystemTableNames()
-    await mock_mcp_validate_tool_output(tool1)
+async def test_get_useful_system_table_names_validation():
+    tool = GetUsefulSystemTableNames()
+    await mock_mcp_validate_tool_output(tool)
 
 
 @pytest.mark.asyncio
 async def test_get_schema_of_table_validation():
     """Test GetSchemaOfTable with mocked output to demonstrate bug"""
     tool = GetSchemaOfTable()
-
-    # Mock the get_schema function to return a dict (simulating the bug)
-    # According to the bug report, the tool returns a dict when it should
-    # return a list
     mock_schema_result = {
         "fields": [
             {"name": "job_id", "type": "VARCHAR"},
@@ -53,11 +48,4 @@ async def test_get_schema_of_table_validation():
     }
 
     with patch("dremioai.tools.tools.get_schema", return_value=mock_schema_result):
-        type_hints = get_type_hints(tool.invoke)
-        expected_type = type_hints["return"]
-        actual_output = await tool.invoke("sys.jobs")
-
-        type_adapter = TypeAdapter(expected_type)
-        # This should fail because actual_output is a dict but
-        # expected_type is List[Dict[str, str]]
-        type_adapter.validate_python(actual_output)
+        await mock_mcp_validate_tool_output(tool, "sys.jobs")
