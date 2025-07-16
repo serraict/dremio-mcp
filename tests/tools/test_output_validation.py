@@ -1,32 +1,43 @@
-"""
-Test script to demonstrate the actual MCP output validation bug.
-
-This script shows how FastMCP validates tool outputs by using the actual
-function type annotations, which is where the validation occurs in the MCP
-framework.
-"""
+#
+#  Copyright (C) 2017-2025 Dremio Corporation
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
 
 import pytest
-from typing import get_type_hints
-from pydantic import TypeAdapter
 from unittest.mock import patch
-
+from mcp.server.fastmcp.utilities.func_metadata import func_metadata
 from dremioai.tools.tools import GetUsefulSystemTableNames, GetSchemaOfTable
 
 
 async def mock_mcp_validate_tool_output(tool, *args, **kwargs):
     """
-    Test how FastMCP validates tool outputs using function type annotations.
+    Use FastMCP's actual validation method instead of mimicking it.
 
-    FastMCP uses the function's return type annotation to create a Pydantic
-    validator that checks the actual return value from the tool's invoke()
-    method.
+    This uses FastMCP's convert_result method which performs the exact same
+    validation that FastMCP does internally when processing tool outputs.
     """
-    type_hints = get_type_hints(tool.invoke)
-    expected_type = type_hints["return"]
+
+    # Get function metadata like FastMCP does
+    metadata = func_metadata(tool.invoke, structured_output=True)
     actual_output = await tool.invoke(*args, **kwargs)
-    type_adapter = TypeAdapter(expected_type)
-    type_adapter.validate_python(actual_output)
+
+    # Use FastMCP's actual convert_result method - this performs validation!
+    # If validation fails, this will raise an exception
+    metadata.convert_result(actual_output)
+
+    # If we reach here, validation passed
+    return True
 
 
 @pytest.mark.asyncio
@@ -37,7 +48,6 @@ async def test_get_useful_system_table_names_validation():
 
 @pytest.mark.asyncio
 async def test_get_schema_of_table_validation():
-    """Test GetSchemaOfTable with mocked output to demonstrate bug"""
     tool = GetSchemaOfTable()
     mock_schema_result = {
         "fields": [
