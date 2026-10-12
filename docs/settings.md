@@ -56,6 +56,7 @@ dremio:
   project_id: <string> # Optional: Project ID for Dremio Cloud
   enable_search: <bool> # Optional: Enable semantic search
   allow_dml: <bool> # Optional: Allow MCP Server to create views in Dremio
+  allowed_schemas: <list> # Optional: Catalog path prefixes the tools may access
   wlm:  # Optional: WLM settings, for running MCP server in stdio mode
     engine_name: <string> # Optional: Direct all SQL to this engine if set
 ```
@@ -69,6 +70,28 @@ PAT can be provided:
 
 -   Directly as a string
 -   As a file path prefixed with '@' (e.g., "@~/tokens/dremio.token")
+
+`allowed_schemas` limits what the tools can reach, for Dremio editions without
+fine-grained privileges (where every user can read every source):
+
+```yaml
+dremio:
+  allowed_schemas:
+    - Sales
+    - Marketing.Reports
+    - INFORMATION_SCHEMA
+```
+
+-   A table is allowed when its path starts with one of the prefixes
+    (case-insensitive, per path component: `Marketing.Reports` does not match
+    `Marketing.Reports_old`).
+-   SQL is checked by extracting every table reference with sqlglot (joins,
+    subqueries, unions, CTEs). Table functions and unparsable SQL are refused.
+-   `GetDescriptionOfTableOrSchema` also accepts parents of a prefix (e.g. the
+    space `Marketing`).
+-   Unset means unrestricted. This is a guardrail in the MCP server, not
+    authorization in Dremio; `INFORMATION_SCHEMA`, if allowed, exposes the
+    names of all tables.
 
 ### Tools Settings
 

@@ -277,6 +277,11 @@ class Dremio(FlagAwareModel):
     )
     oauth2: Optional[OAuth2] = None
     allow_dml: Annotated[Optional[bool], RuntimeMutable()] = Field(default=False)
+    allowed_schemas: Annotated[Optional[List[str]], NoFlag()] = Field(
+        default=None,
+        description="Catalog path prefixes (e.g. 'Sales' or 'Marketing.Reports') the tools may "
+        "read from. Unset means no restriction. For Dremio editions without fine-grained privileges.",
+    )
     extract_org_id_from_jwt: Optional[bool] = Field(
         default=False,
         description="Extract org ID from JWT aud claim for LD context targeting",

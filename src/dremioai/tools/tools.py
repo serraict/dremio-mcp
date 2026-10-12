@@ -49,6 +49,7 @@ from dremioai.config import settings
 from dremioai.config.tools import ToolType
 from dremioai.api.prometheus import vm
 from dremioai.api.dremio.catalog import get_schema, get_lineage, get_descriptions
+from dremioai.tools import allowlist
 from dremioai.api.util import run_in_parallel
 from csv import reader
 from io import StringIO
@@ -411,6 +412,14 @@ class RunSqlQuery(Tools):
                 include_structured=False,
             )
         try:
+            allowlist.ensure_query_allowed(query)
+        except allowlist.NotAllowedError as e:
+            return _call_tool_result(
+                {"error": f"{e}. Only these schemas may be queried: {allowlist.describe()}"},
+                is_error=True,
+                include_structured=False,
+            )
+        try:
             tagged_query = f"/* dremioai: submitter={self.__class__.__name__} */\n{query}"
             dremio_settings = settings.instance().dremio
             max_bytes = dremio_settings.get("max_result_bytes")
@@ -569,6 +578,10 @@ class GetSchemaOfTable(Tools):
                     "error": 'table_name must not be empty. Provide a dot-separated name, e.g. \'"source"."schema"."table"\'.'
                 }
             paths = list(reader(StringIO(table_name), delimiter="."))
+        try:
+            allowlist.ensure_path_allowed(paths[0])
+        except allowlist.NotAllowedError as e:
+            return {"error": str(e)}
         result = await get_schema(paths[0], include_tags=True)
         if result and "sql" in result:
             del result["sql"]
@@ -589,6 +602,10 @@ class GetTableOrViewLineage(Tools):
         Returns:
             A json representation with the lineage of the table or view.
         """
+        try:
+            allowlist.ensure_path_allowed(table_name)
+        except allowlist.NotAllowedError as e:
+            return {"error": str(e)}
         try:
             return await get_lineage(table_name)
         except Exception as e:
@@ -980,4 +997,8 @@ class GetDescriptionOfTableOrSchema(Tools):
         """
         if isinstance(name, str):
             name = [name]
+        try:
+            allowlist.ensure_paths_allowed(name, allow_parents=True)
+        except allowlist.NotAllowedError as e:
+            return {"error": str(e)}
         return await get_descriptions(name)
